@@ -3,6 +3,8 @@
 `ls-f` is a friendly drop-in wrapper around GNU `ls` that adds Nerd Font icons, color hints, and a few quality-of-life improvements while still letting your familiar flags pass straight through. Use it as a standalone command or alias it to `ls` for a richer directory view.
 
 ## Example Output
+![Example output screenshot](docs/example.png)
+
 ```bash
 $ ./lsf -x
  DOCUMENTATION_SUMMARY.md       IMPLEMENTATION_COMPLETE.md
