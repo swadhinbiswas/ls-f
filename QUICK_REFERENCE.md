@@ -226,7 +226,7 @@ alias | grep ls
 
 ## 🆘 Getting Help
 
-- **GitHub Issues:** https://github.com/swadhin-biswas/ls-f/issues
+- **GitHub Issues:** https://github.com/swadhinbiswas/ls-f/issues
 - **Documentation:** See `docs/` folder
 - **FAQ:** Open `index.html` in browser
 
@@ -239,4 +239,4 @@ MIT License — Use freely, modify, and redistribute.
 ---
 
 **Last updated: October 16, 2025**
-For latest docs, visit: https://github.com/swadhin-biswas/ls-f
+For latest docs, visit: https://github.com/swadhinbiswas/ls-f
