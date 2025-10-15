@@ -135,9 +135,9 @@ The table below inventories the remaining GNU `ls` flags and notes their current
 Legend: `✅ Native` = icon-aware handling built into `ls-f`; `🟡 Pass-through` = delegated to `ls` today but slated for native polish; `🛠️ Planned` = not yet behaving like GNU `ls` when icons are enabled.
 
 ## Customization
-Override any icon or color in `~/.config/lsf/lsf.conf`:
+Override any icon or color in `~/.config/lsf`:
 ```bash
-# ~/.config/lsf/lsf.conf
+# nano lsf or nvim lsf 
 ICONS["dir"]=""
 COLORS["dir"]="34"
 ICONS[".py"]="🐍"
