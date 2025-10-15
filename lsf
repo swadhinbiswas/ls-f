@@ -1,0 +1,458 @@
+#!/usr/bin/env bash
+
+VERSION="4.1.0"
+CONFIG_DIR="$HOME/.config/lsf"
+CONFIG_FILE="$CONFIG_DIR/lsf.conf"
+
+# Resolve the directory this script lives in so we can call bundled helpers
+# Works when the script is symlinked as well.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" >/dev/null 2>&1 && pwd)"
+
+# Prefer python3 if available, otherwise fall back to python
+PYTHON=""
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+fi
+
+# Default values
+SHOW_ICONS=true
+IS_RECURSIVE=false
+LS_ARGS=()
+
+# If running under older bash versions (associative arrays require bash >= 4), disable icons
+if [ -n "${BASH_VERSION:-}" ]; then
+    bash_major=${BASH_VERSION%%.*}
+    if [ "$bash_major" -lt 4 ]; then
+        SHOW_ICONS=false
+        # Inform the user (stderr) so they understand why icons disappeared
+        echo "lsf: icons disabled (bash < 4 detected)" >&2
+    fi
+fi
+
+parse_args() {
+    has_l_flag=false
+    has_R_flag=false
+    for arg in "$@"; do
+        case "$arg" in
+            --no-icons)
+                SHOW_ICONS=false
+                ;;
+            -A|--almost-all)
+                LS_ARGS+=("$arg")
+                ;;
+            --help|-h)
+                echo "Usage: lsf [options]"
+                echo "Options:"
+                echo "  -l              List files in long format."
+                echo "  -R              List files recursively."
+                echo "  -A, --almost-all  Do not list implied . and .."
+                echo "  --no-icons      Disable icons."
+                echo "  -h, --help      Show this help message."
+                echo "  -v, --version   Show version information."
+                exit 0
+                ;;
+            --version|-v)
+                echo "lsf version $VERSION"
+                exit 0
+                ;;
+            *)
+                if [[ "$arg" == -* ]]; then
+                    if [[ "$arg" == *l* ]]; then
+                        has_l_flag=true
+                    fi
+                    if [[ "$arg" == *R* ]]; then
+                        has_R_flag=true
+                    fi
+                fi
+                LS_ARGS+=("$arg")
+                ;;
+        esac
+    done
+
+    if [ "$has_l_flag" = true ] || [ "$has_R_flag" = true ]; then
+        has_complex_flag=true
+    fi
+}
+
+has_complex_flag=false
+parse_args "$@"
+
+# Source the config file
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+fi
+
+# --- Icons and Colors ---
+# Only declare associative arrays when icons are enabled (requires bash >= 4)
+if [ "$SHOW_ICONS" = true ]; then
+    declare -A ICONS
+    declare -A COLORS
+
+    # This section defines the icons and colors for different file types.
+    # It uses associative arrays for easy lookup.
+    # The format `ICONS["key"]=${ICONS["key"]:-}` sets a default icon () if not already defined.
+
+    # Directories
+    ICONS["dir"]=${ICONS["dir"]:-}; COLORS["dir"]=${COLORS["dir"]:-1;34} # bold blue
+    ICONS["dir_hidden"]=${ICONS["dir_hidden"]:-.}; COLORS["dir_hidden"]=${COLORS["dir_hidden"]:-34} # blue
+
+# Common Configs
+ICONS[".gitignore"]=${ICONS[".gitignore"]:-}; COLORS[".gitignore"]=${COLORS[".gitignore"]:-91} # bright red
+ICONS[".gitconfig"]=${ICONS[".gitconfig"]:-}; COLORS[".gitconfig"]=${COLORS[".gitconfig"]:-91}
+ICONS[".gitattributes"]=${ICONS[".gitattributes"]:-}; COLORS[".gitattributes"]=${COLORS[".gitattributes"]:-91}
+ICONS[".gitlab-ci.yml"]=${ICONS[".gitlab-ci.yml"]:-}; COLORS[".gitlab-ci.yml"]=${COLORS[".gitlab-ci.yml"]:-91}
+ICONS[".github"]=${ICONS[".github"]:-}; COLORS[".github"]=${COLORS[".github"]:-90}
+ICONS["dockerfile"]=${ICONS["dockerfile"]:-}; COLORS["dockerfile"]=${COLORS["dockerfile"]:-94} # bright blue
+ICONS[".dockerignore"]=${ICONS[".dockerignore"]:-}; COLORS[".dockerignore"]=${COLORS[".dockerignore"]:-94}
+ICONS["docker-compose.yml"]=${ICONS["docker-compose.yml"]:-}; COLORS["docker-compose.yml"]=${COLORS["docker-compose.yml"]:-94}
+ICONS["license"]=${ICONS["license"]:-}; COLORS["license"]=${COLORS["license"]:-90} # bright black
+ICONS["readme.md"]=${ICONS["readme.md"]:-}; COLORS["readme.md"]=${COLORS["readme.md"]:-96} # bright cyan
+ICONS["makefile"]=${ICONS["makefile"]:-}; COLORS["makefile"]=${COLORS["makefile"]:-90}
+ICONS["cmakelists.txt"]=${ICONS["cmakelists.txt"]:-}; COLORS["cmakelists.txt"]=${COLORS["cmakelists.txt"]:-90}
+ICONS[".editorconfig"]=${ICONS[".editorconfig"]:-}; COLORS[".editorconfig"]=${COLORS[".editorconfig"]:-90}
+ICONS[".eslintrc"]=${ICONS[".eslintrc"]:-}; COLORS[".eslintrc"]=${COLORS[".eslintrc"]:-95}
+ICONS[".prettierrc"]=${ICONS[".prettierrc"]:-}; COLORS[".prettierrc"]=${COLORS[".prettierrc"]:-95}
+ICONS[".npmrc"]=${ICONS[".npmrc"]:-}; COLORS[".npmrc"]=${COLORS[".npmrc"]:-91}
+ICONS[".nvmrc"]=${ICONS[".nvmrc"]:-}; COLORS[".nvmrc"]=${COLORS[".nvmrc"]:-92}
+
+# Programming Languages
+ICONS[".py"]=${ICONS[".py"]:-}; COLORS[".py"]=${COLORS[".py"]:-92} # bright green
+ICONS[".pyc"]=${ICONS[".pyc"]:-}; COLORS[".pyc"]=${COLORS[".pyc"]:-90}
+ICONS[".pyo"]=${ICONS[".pyo"]:-}; COLORS[".pyo"]=${COLORS[".pyo"]:-90}
+ICONS[".pyd"]=${ICONS[".pyd"]:-}; COLORS[".pyd"]=${COLORS[".pyd"]:-90}
+ICONS[".ipynb"]=${ICONS[".ipynb"]:-}; COLORS[".ipynb"]=${COLORS[".ipynb"]:-93}
+ICONS[".js"]=${ICONS[".js"]:-}; COLORS[".js"]=${COLORS[".js"]:-93} # yellow
+ICONS[".jsx"]=${ICONS[".jsx"]:-}; COLORS[".jsx"]=${COLORS[".jsx"]:-96}
+ICONS[".ts"]=${ICONS[".ts"]:-}; COLORS[".ts"]=${COLORS[".ts"]:-94} # bright blue
+ICONS[".tsx"]=${ICONS[".tsx"]:-}; COLORS[".tsx"]=${COLORS[".tsx"]:-96}
+ICONS[".mjs"]=${ICONS[".mjs"]:-}; COLORS[".mjs"]=${COLORS[".mjs"]:-93}
+ICONS[".cjs"]=${ICONS[".cjs"]:-}; COLORS[".cjs"]=${COLORS[".cjs"]:-93}
+ICONS[".java"]=${ICONS[".java"]:-}; COLORS[".java"]=${COLORS[".java"]:-93} # bright yellow
+ICONS[".class"]=${ICONS[".class"]:-}; COLORS[".class"]=${COLORS[".class"]:-90}
+ICONS[".jar"]=${ICONS[".jar"]:-}; COLORS[".jar"]=${COLORS[".jar"]:-93}
+ICONS[".c"]=${ICONS[".c"]:-}; COLORS[".c"]=${COLORS[".c"]:-96} # bright cyan
+ICONS[".cpp"]=${ICONS[".cpp"]:-}; COLORS[".cpp"]=${COLORS[".cpp"]:-96}
+ICONS[".cc"]=${ICONS[".cc"]:-}; COLORS[".cc"]=${COLORS[".cc"]:-96}
+ICONS[".cxx"]=${ICONS[".cxx"]:-}; COLORS[".cxx"]=${COLORS[".cxx"]:-96}
+ICONS[".h"]=${ICONS[".h"]:-}; COLORS[".h"]=${COLORS[".h"]:-96}
+ICONS[".hpp"]=${ICONS[".hpp"]:-}; COLORS[".hpp"]=${COLORS[".hpp"]:-96}
+ICONS[".hh"]=${ICONS[".hh"]:-}; COLORS[".hh"]=${COLORS[".hh"]:-96}
+ICONS[".hxx"]=${ICONS[".hxx"]:-}; COLORS[".hxx"]=${COLORS[".hxx"]:-96}
+ICONS[".rs"]=${ICONS[".rs"]:-}; COLORS[".rs"]=${COLORS[".rs"]:-91} # bright red
+ICONS[".go"]=${ICONS[".go"]:-}; COLORS[".go"]=${COLORS[".go"]:-96}
+ICONS[".php"]=${ICONS[".php"]:-}; COLORS[".php"]=${COLORS[".php"]:-95} # bright magenta
+ICONS[".rb"]=${ICONS[".rb"]:-}; COLORS[".rb"]=${COLORS[".rb"]:-91}
+ICONS[".erb"]=${ICONS[".erb"]:-}; COLORS[".erb"]=${COLORS[".erb"]:-91}
+ICONS[".swift"]=${ICONS[".swift"]:-}; COLORS[".swift"]=${COLORS[".swift"]:-93}
+ICONS[".kt"]=${ICONS[".kt"]:-}; COLORS[".kt"]=${COLORS[".kt"]:-93}
+ICONS[".kts"]=${ICONS[".kts"]:-}; COLORS[".kts"]=${COLORS[".kts"]:-93}
+ICONS[".lua"]=${ICONS[".lua"]:-}; COLORS[".lua"]=${COLORS[".lua"]:-94}
+ICONS[".dart"]=${ICONS[".dart"]:-}; COLORS[".dart"]=${COLORS[".dart"]:-94}
+ICONS[".hs"]=${ICONS[".hs"]:-}; COLORS[".hs"]=${COLORS[".hs"]:-95}
+ICONS[".r"]=${ICONS[".r"]:-ﳒ}; COLORS[".r"]=${COLORS[".r"]:-94}
+ICONS[".jl"]=${ICONS[".jl"]:-}; COLORS[".jl"]=${COLORS[".jl"]:-95}
+ICONS[".pl"]=${ICONS[".pl"]:-}; COLORS[".pl"]=${COLORS[".pl"]:-94}
+ICONS[".pm"]=${ICONS[".pm"]:-}; COLORS[".pm"]=${COLORS[".pm"]:-94}
+ICONS[".sh"]=${ICONS[".sh"]:-}; COLORS[".sh"]=${COLORS[".sh"]:-32} # green
+ICONS[".bash"]=${ICONS[".bash"]:-}; COLORS[".bash"]=${COLORS[".bash"]:-32}
+ICONS[".zsh"]=${ICONS[".zsh"]:-}; COLORS[".zsh"]=${COLORS[".zsh"]:-32}
+ICONS[".fish"]=${ICONS[".fish"]:-}; COLORS[".fish"]=${COLORS[".fish"]:-32}
+ICONS[".cs"]=${ICONS[".cs"]:-}; COLORS[".cs"]=${COLORS[".cs"]:-94}
+ICONS[".fs"]=${ICONS[".fs"]:-}; COLORS[".fs"]=${COLORS[".fs"]:-94}
+ICONS[".fsx"]=${ICONS[".fsx"]:-}; COLORS[".fsx"]=${COLORS[".fsx"]:-94}
+ICONS[".vb"]=${ICONS[".vb"]:-}; COLORS[".vb"]=${COLORS[".vb"]:-94}
+ICONS[".scala"]=${ICONS[".scala"]:-}; COLORS[".scala"]=${COLORS[".scala"]:-91}
+ICONS[".clj"]=${ICONS[".clj"]:-}; COLORS[".clj"]=${COLORS[".clj"]:-92}
+ICONS[".cljs"]=${ICONS[".cljs"]:-}; COLORS[".cljs"]=${COLORS[".cljs"]:-92}
+ICONS[".erl"]=${ICONS[".erl"]:-}; COLORS[".erl"]=${COLORS[".erl"]:-95}
+ICONS[".ex"]=${ICONS[".ex"]:-}; COLORS[".ex"]=${COLORS[".ex"]:-95}
+ICONS[".exs"]=${ICONS[".exs"]:-}; COLORS[".exs"]=${COLORS[".exs"]:-95}
+ICONS[".vim"]=${ICONS[".vim"]:-}; COLORS[".vim"]=${COLORS[".vim"]:-92}
+ICONS[".zig"]=${ICONS[".zig"]:-}; COLORS[".zig"]=${COLORS[".zig"]:-93}
+ICONS[".nim"]=${ICONS[".nim"]:-Nim}; COLORS[".nim"]=${COLORS[".nim"]:-93}
+ICONS[".crystal"]=${ICONS[".crystal"]:-}; COLORS[".crystal"]=${COLORS[".crystal"]:-37}
+ICONS[".ml"]=${ICONS[".ml"]:-λ}; COLORS[".ml"]=${COLORS[".ml"]:-93}
+ICONS[".v"]=${ICONS[".v"]:-}; COLORS[".v"]=${COLORS[".v"]:-94}
+ICONS[".asm"]=${ICONS[".asm"]:- }; COLORS[".asm"]=${COLORS[".asm"]:-91}
+ICONS[".s"]=${ICONS[".s"]:- 󱐩}; COLORS[".s"]=${COLORS[".s"]:-91}
+
+
+# Web & Frontend
+ICONS[".html"]=${ICONS[".html"]:-}; COLORS[".html"]=${COLORS[".html"]:-95}
+ICONS[".htm"]=${ICONS[".htm"]:-}; COLORS[".htm"]=${COLORS[".htm"]:-95}
+ICONS[".xhtml"]=${ICONS[".xhtml"]:-}; COLORS[".xhtml"]=${COLORS[".xhtml"]:-95}
+ICONS[".css"]=${ICONS[".css"]:-}; COLORS[".css"]=${COLORS[".css"]:-36} # cyan
+ICONS[".scss"]=${ICONS[".scss"]:-}; COLORS[".scss"]=${COLORS[".scss"]:-36}
+ICONS[".sass"]=${ICONS[".sass"]:-}; COLORS[".sass"]=${COLORS[".sass"]:-36}
+ICONS[".less"]=${ICONS[".less"]:-}; COLORS[".less"]=${COLORS[".less"]:-36}
+ICONS[".styl"]=${ICONS[".styl"]:-}; COLORS[".styl"]=${COLORS[".styl"]:-36}
+ICONS[".vue"]=${ICONS[".vue"]:-﵂}; COLORS[".vue"]=${COLORS[".vue"]:-92}
+ICONS[".svelte"]=${ICONS[".svelte"]:-}; COLORS[".svelte"]=${COLORS[".svelte"]:-91}
+ICONS[".astro"]=${ICONS[".astro"]:-}; COLORS[".astro"]=${COLORS[".astro"]:-91}
+
+# Data & Config
+ICONS[".json"]=${ICONS[".json"]:-}; COLORS[".json"]=${COLORS[".json"]:-94}
+ICONS[".jsonc"]=${ICONS[".jsonc"]:-}; COLORS[".jsonc"]=${COLORS[".jsonc"]:-94}
+ICONS[".json5"]=${ICONS[".json5"]:-}; COLORS[".json5"]=${COLORS[".json5"]:-94}
+ICONS[".xml"]=${ICONS[".xml"]:-}; COLORS[".xml"]=${COLORS[".xml"]:-91}
+ICONS[".yml"]=${ICONS[".yml"]:-}; COLORS[".yml"]=${COLORS[".yml"]:-94}
+ICONS[".yaml"]=${ICONS[".yaml"]:-}; COLORS[".yaml"]=${COLORS[".yaml"]:-94}
+ICONS[".toml"]=${ICONS[".toml"]:-}; COLORS[".toml"]=${COLORS[".toml"]:-94}
+ICONS[".ini"]=${ICONS[".ini"]:-}; COLORS[".ini"]=${COLORS[".ini"]:-90}
+ICONS[".env"]=${ICONS[".env"]:-}; COLORS[".env"]=${COLORS[".env"]:-90}
+ICONS[".conf"]=${ICONS[".conf"]:-}; COLORS[".conf"]=${COLORS[".conf"]:-90}
+ICONS[".cfg"]=${ICONS[".cfg"]:-}; COLORS[".cfg"]=${COLORS[".cfg"]:-90}
+ICONS[".properties"]=${ICONS[".properties"]:-}; COLORS[".properties"]=${COLORS[".properties"]:-90}
+ICONS[".sql"]=${ICONS[".sql"]:-}; COLORS[".sql"]=${COLORS[".sql"]:-93}
+ICONS[".db"]=${ICONS[".db"]:-}; COLORS[".db"]=${COLORS[".db"]:-93}
+ICONS[".sqlite"]=${ICONS[".sqlite"]:-}; COLORS[".sqlite"]=${COLORS[".sqlite"]:-93}
+ICONS[".sqlite3"]=${ICONS[".sqlite3"]:-}; COLORS[".sqlite3"]=${COLORS[".sqlite3"]:-93}
+ICONS[".graphql"]=${ICONS[".graphql"]:-}; COLORS[".graphql"]=${COLORS[".graphql"]:-95}
+ICONS[".gql"]=${ICONS[".gql"]:-}; COLORS[".gql"]=${COLORS[".gql"]:-95}
+ICONS[".proto"]=${ICONS[".proto"]:-}; COLORS[".proto"]=${COLORS[".proto"]:-94}
+
+# Documents
+ICONS[".md"]=${ICONS[".md"]:-}; COLORS[".md"]=${COLORS[".md"]:-96}
+ICONS[".markdown"]=${ICONS[".markdown"]:-}; COLORS[".markdown"]=${COLORS[".markdown"]:-96}
+ICONS[".mdx"]=${ICONS[".mdx"]:-}; COLORS[".mdx"]=${COLORS[".mdx"]:-96}
+ICONS[".txt"]=${ICONS[".txt"]:-}; COLORS[".txt"]=${COLORS[".txt"]:-37} # white
+ICONS[".pdf"]=${ICONS[".pdf"]:-}; COLORS[".pdf"]=${COLORS[".pdf"]:-31} # red
+ICONS[".doc"]=${ICONS[".doc"]:-}; COLORS[".doc"]=${COLORS[".doc"]:-94}
+ICONS[".docx"]=${ICONS[".docx"]:-}; COLORS[".docx"]=${COLORS[".docx"]:-94}
+ICONS[".xls"]=${ICONS[".xls"]:-}; COLORS[".xls"]=${COLORS[".xls"]:-92}
+ICONS[".xlsx"]=${ICONS[".xlsx"]:-}; COLORS[".xlsx"]=${COLORS[".xlsx"]:-92}
+ICONS[".ppt"]=${ICONS[".ppt"]:-}; COLORS[".ppt"]=${COLORS[".ppt"]:-91}
+ICONS[".pptx"]=${ICONS[".pptx"]:-}; COLORS[".pptx"]=${COLORS[".pptx"]:-91}
+ICONS[".csv"]=${ICONS[".csv"]:-}; COLORS[".csv"]=${COLORS[".csv"]:-92}
+ICONS[".tsv"]=${ICONS[".tsv"]:-}; COLORS[".tsv"]=${COLORS[".tsv"]:-92}
+ICONS[".log"]=${ICONS[".log"]:-}; COLORS[".log"]=${COLORS[".log"]:-90}
+ICONS[".tex"]=${ICONS[".tex"]:-ﭨ}; COLORS[".tex"]=${COLORS[".tex"]:-92}
+ICONS[".bib"]=${ICONS[".bib"]:-ﭨ}; COLORS[".bib"]=${COLORS[".bib"]:-93}
+ICONS[".rtf"]=${ICONS[".rtf"]:-}; COLORS[".rtf"]=${COLORS[".rtf"]:-94}
+ICONS[".odt"]=${ICONS[".odt"]:-}; COLORS[".odt"]=${COLORS[".odt"]:-94}
+ICONS[".ods"]=${ICONS[".ods"]:-}; COLORS[".ods"]=${COLORS[".ods"]:-92}
+
+# Media - Images
+ICONS[".png"]=${ICONS[".png"]:-}; COLORS[".png"]=${COLORS[".png"]:-93}
+ICONS[".jpg"]=${ICONS[".jpg"]:-}; COLORS[".jpg"]=${COLORS[".jpg"]:-93}
+ICONS[".jpeg"]=${ICONS[".jpeg"]:-}; COLORS[".jpeg"]=${COLORS[".jpeg"]:-93}
+ICONS[".svg"]=${ICONS[".svg"]:-}; COLORS[".svg"]=${COLORS[".svg"]:-93}
+ICONS[".gif"]=${ICONS[".gif"]:-}; COLORS[".gif"]=${COLORS[".gif"]:-93}
+ICONS[".webp"]=${ICONS[".webp"]:-}; COLORS[".webp"]=${COLORS[".webp"]:-93}
+ICONS[".bmp"]=${ICONS[".bmp"]:-}; COLORS[".bmp"]=${COLORS[".bmp"]:-93}
+ICONS[".ico"]=${ICONS[".ico"]:-}; COLORS[".ico"]=${COLORS[".ico"]:-93}
+ICONS[".tiff"]=${ICONS[".tiff"]:-}; COLORS[".tiff"]=${COLORS[".tiff"]:-93}
+ICONS[".tif"]=${ICONS[".tif"]:-}; COLORS[".tif"]=${COLORS[".tif"]:-93}
+ICONS[".psd"]=${ICONS[".psd"]:-}; COLORS[".psd"]=${COLORS[".psd"]:-94}
+ICONS[".ai"]=${ICONS[".ai"]:-}; COLORS[".ai"]=${COLORS[".ai"]:-93}
+ICONS[".eps"]=${ICONS[".eps"]:-}; COLORS[".eps"]=${COLORS[".eps"]:-93}
+ICONS[".raw"]=${ICONS[".raw"]:-}; COLORS[".raw"]=${COLORS[".raw"]:-93}
+
+# Media - Audio
+ICONS[".mp3"]=${ICONS[".mp3"]:-}; COLORS[".mp3"]=${COLORS[".mp3"]:-95}
+ICONS[".wav"]=${ICONS[".wav"]:-}; COLORS[".wav"]=${COLORS[".wav"]:-95}
+ICONS[".flac"]=${ICONS[".flac"]:-}; COLORS[".flac"]=${COLORS[".flac"]:-95}
+ICONS[".aac"]=${ICONS[".aac"]:-}; COLORS[".aac"]=${COLORS[".aac"]:-95}
+ICONS[".ogg"]=${ICONS[".ogg"]:-}; COLORS[".ogg"]=${COLORS[".ogg"]:-95}
+ICONS[".m4a"]=${ICONS[".m4a"]:-}; COLORS[".m4a"]=${COLORS[".m4a"]:-95}
+ICONS[".wma"]=${ICONS[".wma"]:-}; COLORS[".wma"]=${COLORS[".wma"]:-95}
+ICONS[".opus"]=${ICONS[".opus"]:-}; COLORS[".opus"]=${COLORS[".opus"]:-95}
+ICONS[".mid"]=${ICONS[".mid"]:-}; COLORS[".mid"]=${COLORS[".mid"]:-95}
+ICONS[".midi"]=${ICONS[".midi"]:-}; COLORS[".midi"]=${COLORS[".midi"]:-95}
+
+# Media - Video
+ICONS[".mp4"]=${ICONS[".mp4"]:-}; COLORS[".mp4"]=${COLORS[".mp4"]:-95}
+ICONS[".mov"]=${ICONS[".mov"]:-}; COLORS[".mov"]=${COLORS[".mov"]:-95}
+ICONS[".avi"]=${ICONS[".avi"]:-}; COLORS[".avi"]=${COLORS[".avi"]:-95}
+ICONS[".mkv"]=${ICONS[".mkv"]:-}; COLORS[".mkv"]=${COLORS[".mkv"]:-95}
+ICONS[".webm"]=${ICONS[".webm"]:-}; COLORS[".webm"]=${COLORS[".webm"]:-95}
+ICONS[".flv"]=${ICONS[".flv"]:-}; COLORS[".flv"]=${COLORS[".flv"]:-95}
+ICONS[".wmv"]=${ICONS[".wmv"]:-}; COLORS[".wmv"]=${COLORS[".wmv"]:-95}
+ICONS[".m4v"]=${ICONS[".m4v"]:-}; COLORS[".m4v"]=${COLORS[".m4v"]:-95}
+ICONS[".mpg"]=${ICONS[".mpg"]:-}; COLORS[".mpg"]=${COLORS[".mpg"]:-95}
+ICONS[".mpeg"]=${ICONS[".mpeg"]:-}; COLORS[".mpeg"]=${COLORS[".mpeg"]:-95}
+
+# Compressed & Archives
+ICONS[".zip"]=${ICONS[".zip"]:-}; COLORS[".zip"]=${COLORS[".zip"]:-95}
+ICONS[".tar"]=${ICONS[".tar"]:-}; COLORS[".tar"]=${COLORS[".tar"]:-95}
+ICONS[".gz"]=${ICONS[".gz"]:-}; COLORS[".gz"]=${COLORS[".gz"]:-95}
+ICONS[".bz2"]=${ICONS[".bz2"]:-}; COLORS[".bz2"]=${COLORS[".bz2"]:-95}
+ICONS[".xz"]=${ICONS[".xz"]:-}; COLORS[".xz"]=${COLORS[".xz"]:-95}
+ICONS[".7z"]=${ICONS[".7z"]:-}; COLORS[".7z"]=${COLORS[".7z"]:-95}
+ICONS[".rar"]=${ICONS[".rar"]:-}; COLORS[".rar"]=${COLORS[".rar"]:-95}
+ICONS[".tar.gz"]=${ICONS[".tar.gz"]:-}; COLORS[".tar.gz"]=${COLORS[".tar.gz"]:-95}
+ICONS[".tgz"]=${ICONS[".tgz"]:-}; COLORS[".tgz"]=${COLORS[".tgz"]:-95}
+ICONS[".tar.bz2"]=${ICONS[".tar.bz2"]:-}; COLORS[".tar.bz2"]=${COLORS[".tar.bz2"]:-95}
+ICONS[".tbz2"]=${ICONS[".tbz2"]:-}; COLORS[".tbz2"]=${COLORS[".tbz2"]:-95}
+ICONS[".tar.xz"]=${ICONS[".tar.xz"]:-}; COLORS[".tar.xz"]=${COLORS[".tar.xz"]:-95}
+ICONS[".txz"]=${ICONS[".txz"]:-}; COLORS[".txz"]=${COLORS[".txz"]:-95}
+ICONS[".iso"]=${ICONS[".iso"]:-}; COLORS[".iso"]=${COLORS[".iso"]:-95}
+ICONS[".dmg"]=${ICONS[".dmg"]:-}; COLORS[".dmg"]=${COLORS[".dmg"]:-95}
+
+# Executables & Binaries
+ICONS[".exe"]=${ICONS[".exe"]:-}; COLORS[".exe"]=${COLORS[".exe"]:-92}
+ICONS[".app"]=${ICONS[".app"]:-}; COLORS[".app"]=${COLORS[".app"]:-92}
+ICONS[".dll"]=${ICONS[".dll"]:-}; COLORS[".dll"]=${COLORS[".dll"]:-90}
+ICONS[".so"]=${ICONS[".so"]:-}; COLORS[".so"]=${COLORS[".so"]:-90}
+ICONS[".dylib"]=${ICONS[".dylib"]:-}; COLORS[".dylib"]=${COLORS[".dylib"]:-90}
+ICONS[".bin"]=${ICONS[".bin"]:-}; COLORS[".bin"]=${COLORS[".bin"]:-90}
+ICONS[".msi"]=${ICONS[".msi"]:-}; COLORS[".msi"]=${COLORS[".msi"]:-92}
+ICONS[".deb"]=${ICONS[".deb"]:-}; COLORS[".deb"]=${COLORS[".deb"]:-91}
+ICONS[".rpm"]=${ICONS[".rpm"]:-}; COLORS[".rpm"]=${COLORS[".rpm"]:-91}
+ICONS[".apk"]=${ICONS[".apk"]:-}; COLORS[".apk"]=${COLORS[".apk"]:-92}
+
+# Package Managers & Dependencies
+ICONS["package.json"]=${ICONS["package.json"]:-}; COLORS["package.json"]=${COLORS["package.json"]:-91}
+ICONS["package-lock.json"]=${ICONS["package-lock.json"]:-}; COLORS["package-lock.json"]=${COLORS["package-lock.json"]:-90}
+ICONS["yarn.lock"]=${ICONS["yarn.lock"]:-}; COLORS["yarn.lock"]=${COLORS["yarn.lock"]:-90}
+ICONS["composer.json"]=${ICONS["composer.json"]:-}; COLORS["composer.json"]=${COLORS["composer.json"]:-90}
+ICONS["gemfile"]=${ICONS["gemfile"]:-}; COLORS["gemfile"]=${COLORS["gemfile"]:-91}
+ICONS["cargo.toml"]=${ICONS["cargo.toml"]:-}; COLORS["cargo.toml"]=${COLORS["cargo.toml"]:-91}
+ICONS["requirements.txt"]=${ICONS["requirements.txt"]:-}; COLORS["requirements.txt"]=${COLORS["requirements.txt"]:-92}
+ICONS["pipfile"]=${ICONS["pipfile"]:-}; COLORS["pipfile"]=${COLORS["pipfile"]:-92}
+ICONS["go.mod"]=${ICONS["go.mod"]:-}; COLORS["go.mod"]=${COLORS[".go.mod"]:-96}
+ICONS["pubspec.yaml"]=${ICONS["pubspec.yaml"]:-}; COLORS["pubspec.yaml"]=${COLORS["pubspec.yaml"]:-94}
+
+# Fonts
+ICONS[".ttf"]=${ICONS[".ttf"]:-}; COLORS[".ttf"]=${COLORS[".ttf"]:-37}
+ICONS[".otf"]=${ICONS[".otf"]:-}; COLORS[".otf"]=${COLORS[".otf"]:-37}
+ICONS[".woff"]=${ICONS[".woff"]:-}; COLORS[".woff"]=${COLORS[".woff"]:-37}
+ICONS[".woff2"]=${ICONS[".woff2"]:-}; COLORS[".woff2"]=${COLORS[".woff2"]:-37}
+ICONS[".eot"]=${ICONS[".eot"]:-}; COLORS[".eot"]=${COLORS[".eot"]:-37}
+
+# 3D & CAD
+ICONS[".obj"]=${ICONS[".obj"]:-}; COLORS[".obj"]=${COLORS[".obj"]:-95}
+ICONS[".fbx"]=${ICONS[".fbx"]:-}; COLORS[".fbx"]=${COLORS[".fbx"]:-95}
+ICONS[".stl"]=${ICONS[".stl"]:-}; COLORS[".stl"]=${COLORS[".stl"]:-95}
+ICONS[".blend"]=${ICONS[".blend"]:- Blender}; COLORS[".blend"]=${COLORS[".blend"]:-93}
+ICONS[".3ds"]=${ICONS[".3ds"]:-}; COLORS[".3ds"]=${COLORS[".3ds"]:-95}
+ICONS[".dae"]=${ICONS[".dae"]:-}; COLORS[".dae"]=${COLORS[".dae"]:-95}
+ICONS[".gltf"]=${ICONS[".gltf"]:-}; COLORS[".gltf"]=${COLORS[".gltf"]:-95}
+ICONS[".glb"]=${ICONS[".glb"]:-}; COLORS[".glb"]=${COLORS[".glb"]:-95}
+
+# Other
+ICONS[".lock"]=${ICONS[".lock"]:-}; COLORS[".lock"]=${COLORS[".lock"]:-90}
+ICONS[".key"]=${ICONS[".key"]:-}; COLORS[".key"]=${COLORS[".key"]:-91}
+ICONS[".pem"]=${ICONS[".pem"]:-}; COLORS[".pem"]=${COLORS[".pem"]:-91}
+ICONS[".crt"]=${ICONS[".crt"]:-}; COLORS[".crt"]=${COLORS[".crt"]:-91}
+ICONS[".cert"]=${ICONS[".cert"]:-}; COLORS[".cert"]=${COLORS[".cert"]:-91}
+ICONS[".pub"]=${ICONS[".pub"]:-}; COLORS[".pub"]=${COLORS[".pub"]:-91}
+ICONS[".gpg"]=${ICONS[".gpg"]:-}; COLORS[".gpg"]=${COLORS[".gpg"]:-91}
+ICONS[".bak"]=${ICONS[".bak"]:-}; COLORS[".bak"]=${COLORS[".bak"]:-90}
+ICONS[".tmp"]=${ICONS[".tmp"]:-}; COLORS[".tmp"]=${COLORS[".tmp"]:-90}
+ICONS[".swp"]=${ICONS[".swp"]:-}; COLORS[".swp"]=${COLORS[".swp"]:-90}
+ICONS[".cache"]=${ICONS[".cache"]:-}; COLORS[".cache"]=${COLORS[".cache"]:-90}
+# Close icons block
+fi
+
+# Default Icon
+ICONS["default"]=${ICONS["default"]:-};COLORS["default"]=${COLORS["default"]:-37}
+# --- Get Icon Function ---
+get_icon() {
+    local filename="$1"
+
+    # If icons are disabled, just print filename (no icon)
+    if [ "$SHOW_ICONS" != true ]; then
+        echo -n "$filename"
+        return
+    fi
+
+    if [[ -d "$filename" ]]; then
+        if [[ "$filename" == .* ]]; then
+            echo -n -e "\e[${COLORS["dir_hidden"]}m${ICONS["dir_hidden"]}\e[0m"
+        else
+            echo -n -e "\e[${COLORS["dir"]}m${ICONS["dir"]}\e[0m"
+        fi
+        return
+    fi
+
+    local lower_filename=${filename,,}
+    local ext=".${lower_filename##*.}"
+
+    # Check for exact filename matches first (e.g., Dockerfile, LICENSE)
+    if [[ -n "${ICONS[$lower_filename]}" ]]; then
+        echo -n -e "\e[${COLORS[$lower_filename]}m${ICONS[$lower_filename]}\e[0m"
+    # Then check by extension
+    elif [[ -n "${ICONS[$ext]}" ]]; then
+        echo -n -e "\e[${COLORS[$ext]}m${ICONS[$ext]}\e[0m"
+    else
+        echo -n -e "\e[${COLORS["default"]}m${ICONS["default"]}\e[0m"
+    fi
+}
+
+handle_complex_view() {
+    # For -l and -R, use a simpler, line-by-line output
+
+    new_ls_args=()
+    has_l_flag=false
+    inserted_b_flag=false
+    for arg in "${LS_ARGS[@]}"; do
+        if [[ "$arg" == -*l* ]] && [[ "$arg" != --* ]]; then
+            has_l_flag=true
+            new_ls_args+=("$arg")
+            if [ "$inserted_b_flag" = false ]; then
+                new_ls_args+=("-b")
+                inserted_b_flag=true
+            fi
+        else
+            new_ls_args+=("$arg")
+        fi
+    done
+
+    ls --color=never "${new_ls_args[@]}" | while IFS= read -r line; do
+        if [ -z "$line" ]; then
+            echo
+        elif [[ "$line" == *":" ]]; then # For -R, print directory lines as-is
+            echo -e "\n\e[1;34m$line\e[0m"
+        else
+            # Extract filename from complex output
+            if [ "$has_l_flag" = true ]; then
+                filename_escaped=$(echo "$line" | awk '{print $NF}')
+                filename=$(echo -e "$filename_escaped")
+            else
+                filename="$line"
+            fi
+
+            icon=$(get_icon "$filename")
+            echo -e "$icon $line"
+        fi
+    done
+}
+
+handle_grid_view() {
+    # --- Grid View (Default) ---
+    # Use bundled column.py via resolved script dir and preferred python interpreter.
+    # If python isn't available or column.py missing, fall back to a simple column-like output.
+    ls --color=never "${LS_ARGS[@]}" | while IFS= read -r item; do
+        icon=$(get_icon "$item")
+        echo "$icon $item"
+    done |
+    # Prefer executing the bundled column.py directly if it's executable.
+    if [ -x "$SCRIPT_DIR/column.py" ]; then
+        "$SCRIPT_DIR/column.py"
+    elif [ -n "$PYTHON" ] && [ -f "$SCRIPT_DIR/column.py" ]; then
+        # Use -u to make Python stdout unbuffered so interactive pipes behave.
+        "$PYTHON" -u "$SCRIPT_DIR/column.py"
+    else
+        # Simple fallback: try the system `column` command, otherwise cat
+        if command -v column >/dev/null 2>&1; then
+            column -t -s $'\t'
+        else
+            cat
+        fi
+    fi
+}
+
+# --- Main Logic ---
+if [ "$SHOW_ICONS" = false ]; then
+    ls "${LS_ARGS[@]}"
+    exit 0
+fi
+
+if [ "$has_complex_flag" = true ]; then
+    handle_complex_view
+else
+    handle_grid_view
+fi
