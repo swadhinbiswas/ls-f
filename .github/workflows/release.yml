@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    name: Build and upload release artifacts
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # needed to upload assets and create releases
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up bash
+        run: echo "Using bash $BASH_VERSION"
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          ref="${GITHUB_REF##*/}"
+          # ref is like v4.5.0
+          echo "tag=$ref" >> "$GITHUB_OUTPUT"
+          echo "version=${ref#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Make release script executable
+        run: chmod +x tools/release.sh
+
+      - name: Build artifacts
+        run: |
+          ./tools/release.sh "${{ steps.version.outputs.version }}"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          if [[ -f RELEASE_NOTES.md ]]; then
+            echo 'notes<<EOF' >> $GITHUB_OUTPUT
+            cat RELEASE_NOTES.md >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo 'notes=Release' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/ls-f-${{ steps.version.outputs.version }}.tar.gz
+            dist/ls-f-${{ steps.version.outputs.version }}.zip
+            dist/ls-f-${{ steps.version.outputs.version }}.SHA256SUMS
