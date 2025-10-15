@@ -153,5 +153,9 @@ Reload your shell (or re-run `lsf`) to apply changes. The configuration file is 
 ## Contributing
 Issues and pull requests are welcome! Please document new flags in the tables above and add regression tests or example commands when possible.
 
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up your environment, commit style, and PR guidelines.
+- Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+- Security issues? Read our [Security Policy](SECURITY.md) and report privately.
+
 ## License
 Licensed under the MIT License. See [LICENSE](LICENSE) for details.
