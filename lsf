@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-VERSION="4.1.0"
+VERSION="4.5.0"
 CONFIG_DIR="$HOME/.config/lsf"
 CONFIG_FILE="$CONFIG_DIR/lsf.conf"
 
@@ -20,6 +20,11 @@ fi
 SHOW_ICONS=true
 IS_RECURSIVE=false
 LS_ARGS=()
+TABSIZE=8
+USE_ESCAPE=false
+LAYOUT_BY_LINES=false
+USE_ZERO=false
+HAS_CONTEXT=false
 
 # If running under older bash versions (associative arrays require bash >= 4), disable icons
 if [ -n "${BASH_VERSION:-}" ]; then
@@ -34,12 +39,55 @@ fi
 parse_args() {
     has_l_flag=false
     has_R_flag=false
+    local tabsize_pending=false
     for arg in "$@"; do
+        if [ "$tabsize_pending" = true ]; then
+            TABSIZE="$arg"
+            LS_ARGS+=("$arg")
+            tabsize_pending=false
+            continue
+        fi
         case "$arg" in
             --no-icons)
                 SHOW_ICONS=false
                 ;;
             -A|--almost-all)
+                LS_ARGS+=("$arg")
+                ;;
+            --tabsize=*)
+                TABSIZE="${arg#*=}"
+                LS_ARGS+=("$arg")
+                ;;
+            --tabsize)
+                tabsize_pending=true
+                LS_ARGS+=("$arg")
+                ;;
+            -T*)
+                if [ "$arg" = "-T" ]; then
+                    tabsize_pending=true
+                    LS_ARGS+=("$arg")
+                else
+                    TABSIZE="${arg#-T}"
+                    LS_ARGS+=("$arg")
+                fi
+                ;;
+            -b|--escape)
+                USE_ESCAPE=true
+                LS_ARGS+=("$arg")
+                ;;
+            --context)
+                HAS_CONTEXT=true
+                LS_ARGS+=("$arg")
+                ;;
+            -Z)
+                HAS_CONTEXT=true
+                LS_ARGS+=("$arg")
+                ;;
+            --zero)
+                USE_ZERO=true
+                ;;
+            -x)
+                LAYOUT_BY_LINES=true
                 LS_ARGS+=("$arg")
                 ;;
             --help|-h)
@@ -48,6 +96,10 @@ parse_args() {
                 echo "  -l              List files in long format."
                 echo "  -R              List files recursively."
                 echo "  -A, --almost-all  Do not list implied . and .."
+                echo "  -b, --escape     Print C-style escapes for nongraphic characters."
+                echo "  -x              List entries by lines instead of columns."
+                echo "  -X              Sort alphabetically by entry extension."
+                echo "  -T, --tabsize=COLS Assume tab stops at each COLS."
                 echo "  --no-icons      Disable icons."
                 echo "  -h, --help      Show this help message."
                 echo "  -v, --version   Show version information."
@@ -65,19 +117,38 @@ parse_args() {
                     if [[ "$arg" == *R* ]]; then
                         has_R_flag=true
                     fi
+                    if [[ "$arg" != --* && "$arg" == *b* ]]; then
+                        USE_ESCAPE=true
+                    fi
+                    if [[ "$arg" != --* && "$arg" == *x* ]]; then
+                        LAYOUT_BY_LINES=true
+                    fi
+                    if [[ "$arg" != --* && "$arg" == *Z* ]]; then
+                        HAS_CONTEXT=true
+                    fi
                 fi
                 LS_ARGS+=("$arg")
                 ;;
         esac
     done
 
-    if [ "$has_l_flag" = true ] || [ "$has_R_flag" = true ]; then
+    if [ "$tabsize_pending" = true ]; then
+        echo "lsf: option requires an argument -- 'T'" >&2
+        exit 1
+    fi
+
+    if [ "$has_l_flag" = true ] || [ "$has_R_flag" = true ] || [ "$HAS_CONTEXT" = true ]; then
         has_complex_flag=true
     fi
 }
 
 has_complex_flag=false
 parse_args "$@"
+
+case "$TABSIZE" in
+    ''|*[!0-9]*) TABSIZE=8 ;;
+    0) TABSIZE=8 ;;
+esac
 
 # Source the config file
 if [ -f "$CONFIG_FILE" ]; then
@@ -349,6 +420,20 @@ fi
 
 # Default Icon
 ICONS["default"]=${ICONS["default"]:-};COLORS["default"]=${COLORS["default"]:-37}
+# --- Utility Functions ---
+decode_c_escapes() {
+    local input="$1"
+    printf '%b' "${input//%/%%}"
+}
+
+print_output_line() {
+    local content="$1"
+    if [ "$USE_ZERO" = true ]; then
+        printf '%s\0' "$content"
+    else
+        printf '%s\n' "$content"
+    fi
+}
 # --- Get Icon Function ---
 get_icon() {
     local filename="$1"
@@ -387,37 +472,66 @@ handle_complex_view() {
 
     new_ls_args=()
     has_l_flag=false
-    inserted_b_flag=false
+    has_context_flag=false
+    has_user_b_flag=false
     for arg in "${LS_ARGS[@]}"; do
         if [[ "$arg" == -*l* ]] && [[ "$arg" != --* ]]; then
             has_l_flag=true
-            new_ls_args+=("$arg")
-            if [ "$inserted_b_flag" = false ]; then
-                new_ls_args+=("-b")
-                inserted_b_flag=true
-            fi
-        else
-            new_ls_args+=("$arg")
         fi
+        if [[ "$arg" == "--context" ]] || [[ "$arg" == "-Z" ]] || ([[ "$arg" != --* ]] && [[ "$arg" == *Z* ]]); then
+            has_context_flag=true
+        fi
+        if [[ "$arg" == "-b" ]] || [[ "$arg" == "--escape" ]] || ([[ "$arg" != --* ]] && [[ "$arg" == *b* ]]); then
+            has_user_b_flag=true
+        fi
+
+        new_ls_args+=("$arg")
     done
+
+    if [ "$has_user_b_flag" = false ]; then
+        if [ "$has_l_flag" = true ] || [ "$has_context_flag" = true ]; then
+            new_ls_args+=("-b")
+        fi
+    fi
 
     ls --color=never "${new_ls_args[@]}" | while IFS= read -r line; do
         if [ -z "$line" ]; then
-            echo
-        elif [[ "$line" == *":" ]]; then # For -R, print directory lines as-is
-            echo -e "\n\e[1;34m$line\e[0m"
-        else
-            # Extract filename from complex output
-            if [ "$has_l_flag" = true ]; then
-                filename_escaped=$(echo "$line" | awk '{print $NF}')
-                filename=$(echo -e "$filename_escaped")
-            else
-                filename="$line"
-            fi
-
-            icon=$(get_icon "$filename")
-            echo -e "$icon $line"
+            print_output_line ""
+            continue
         fi
+
+        if [[ "$line" == *":" ]]; then # For -R, print directory lines as-is
+            local dir_label
+            if [ "$USE_ESCAPE" = true ]; then
+                dir_label="$line"
+            else
+                dir_label=$(decode_c_escapes "$line")
+            fi
+            print_output_line ""
+            print_output_line "$(printf '\e[1;34m%s\e[0m' "$dir_label")"
+            continue
+        fi
+
+        # Extract filename from complex output
+        local decoded_line
+        decoded_line=$(decode_c_escapes "$line")
+        local filename
+        if [ "$has_l_flag" = true ] || [ "$has_context_flag" = true ]; then
+            local filename_escaped
+            filename_escaped=$(echo "$line" | awk '{print $NF}')
+            filename=$(decode_c_escapes "$filename_escaped")
+        else
+            filename="$decoded_line"
+        fi
+
+        local display_line
+        if [ "$USE_ESCAPE" = true ]; then
+            display_line="$line"
+        else
+            display_line="$decoded_line"
+        fi
+
+        print_output_line "$(printf '%s %s' "$(get_icon "$filename")" "$display_line")"
     done
 }
 
@@ -425,29 +539,73 @@ handle_grid_view() {
     # --- Grid View (Default) ---
     # Use bundled column.py via resolved script dir and preferred python interpreter.
     # If python isn't available or column.py missing, fall back to a simple column-like output.
-    ls --color=never "${LS_ARGS[@]}" | while IFS= read -r item; do
-        icon=$(get_icon "$item")
-        echo "$icon $item"
+    local layout_mode="columns"
+    if [ "$LAYOUT_BY_LINES" = true ]; then
+        layout_mode="rows"
+    fi
+
+    local grid_ls_args=()
+    if [ "$LAYOUT_BY_LINES" = true ]; then
+        for arg in "${LS_ARGS[@]}"; do
+            if [[ "$arg" == "-x" ]]; then
+                continue
+            fi
+            if [[ "$arg" != --* && "$arg" == *x* ]]; then
+                local trimmed
+                trimmed="${arg//x/}"
+                if [ -n "$trimmed" ] && [ "$trimmed" != "-" ]; then
+                    grid_ls_args+=("$trimmed")
+                fi
+                continue
+            fi
+            grid_ls_args+=("$arg")
+        done
+    else
+        grid_ls_args=("${LS_ARGS[@]}")
+    fi
+
+    ls --color=never "${grid_ls_args[@]}" | while IFS= read -r item; do
+        actual_item=$(decode_c_escapes "$item")
+        icon=$(get_icon "$actual_item")
+        if [ "$USE_ESCAPE" = true ]; then
+            display_item="$item"
+        else
+            display_item="$actual_item"
+        fi
+        printf '%s %s\n' "$icon" "$display_item"
     done |
     # Prefer executing the bundled column.py directly if it's executable.
     if [ -x "$SCRIPT_DIR/column.py" ]; then
-        "$SCRIPT_DIR/column.py"
+        LSF_TABSIZE="$TABSIZE" LSF_LAYOUT="$layout_mode" "$SCRIPT_DIR/column.py"
     elif [ -n "$PYTHON" ] && [ -f "$SCRIPT_DIR/column.py" ]; then
         # Use -u to make Python stdout unbuffered so interactive pipes behave.
-        "$PYTHON" -u "$SCRIPT_DIR/column.py"
+        LSF_TABSIZE="$TABSIZE" LSF_LAYOUT="$layout_mode" "$PYTHON" -u "$SCRIPT_DIR/column.py"
     else
         # Simple fallback: try the system `column` command, otherwise cat
         if command -v column >/dev/null 2>&1; then
-            column -t -s $'\t'
+            if [ "$LAYOUT_BY_LINES" = true ]; then
+                column -t -x
+            else
+                column -t
+            fi
         else
             cat
         fi
-    fi
+    fi |
+    while IFS= read -r line; do
+        print_output_line "$line"
+    done
 }
 
 # --- Main Logic ---
 if [ "$SHOW_ICONS" = false ]; then
-    ls "${LS_ARGS[@]}"
+    if [ "$USE_ZERO" = true ]; then
+        ls "${LS_ARGS[@]}" | while IFS= read -r line; do
+            print_output_line "$line"
+        done
+    else
+        ls "${LS_ARGS[@]}"
+    fi
     exit 0
 fi
 

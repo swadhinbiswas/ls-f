@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ls-f - Beautiful ls with Icons</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--light);
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, var(--secondary) 100%);
+            color: white;
+            padding: 120px 20px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+        }
+
+        header h1 {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+            animation: slideInDown 0.8s ease-out;
+        }
+
+        header > .container > p:first-of-type {
+            font-size: 1.4em;
+            opacity: 0.95;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            animation: slideInUp 0.8s ease-out 0.1s both;
+        }
+
+        header > .container > p:nth-of-type(2) {
+            font-size: 1.1em;
+            opacity: 0.85;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+            animation: slideInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
+            animation: slideInUp 0.8s ease-out 0.3s both;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            background: #f0f9ff;
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(236, 72, 153, 0.3);
+            background: #d946a6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        section {
+            padding: 80px 0;
+            position: relative;
+        }
+
+        section:nth-child(even) {
+            background: white;
+        }
+
+        section h2 {
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            text-align: center;
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        section h2 span {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease-out;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+            line-height: 1.8;
+        }
+
+        /* Installation Methods */
+        .installation-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .method-card {
+            background: linear-gradient(135deg, #f5f7ff 0%, #fff5f7 100%);
+            padding: 35px;
+            border-radius: 12px;
+            border-left: 5px solid var(--primary);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--primary);
+        }
+
+        .method-card:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .method-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .method-card p {
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #10b981;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.5;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        .demo-section {
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            margin: 40px 0;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        .demo-output {
+            background: #0f172a;
+            color: #10b981;
+            padding: 25px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 25px 0;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .faq-item {
+            background: white;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 12px;
+            border-left: 5px solid var(--primary);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(3px);
+        }
+
+        .faq-item h4 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .faq-item p {
+            color: var(--text-light);
+            line-height: 1.8;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-box .number {
+            font-size: 3em;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .stat-box .label {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, var(--dark) 0%, #1a2a4a 100%);
+            color: white;
+            padding: 60px 20px 30px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 12px 0;
+            color: #cbd5e1;
+        }
+
+        .links {
+            margin: 30px 0;
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            color: #93c5fd;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .links a:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 60px 20px 50px;
+            }
+
+            header h1 {
+                font-size: 2.2em;
+            }
+
+            header p {
+                font-size: 1em;
+            }
+
+            section h2 {
+                font-size: 1.8em;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            pre {
+                font-size: 0.85em;
+                padding: 15px;
+            }
+
+            .demo-section {
+                padding: 20px;
+            }
+
+            .feature-card {
+                padding: 25px;
+            }
+        }
+
+        /* Section Backgrounds */
+        section:nth-child(2),
+        section:nth-child(4),
+        section:nth-child(6),
+        section:nth-child(8) {
+            background: #f8fafc;
+        }
+
+        /* Highlight */
+        .highlight {
+            background: linear-gradient(120deg, #fef3c7 0%, #fcd34d 100%);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header / Hero Section -->
+    <header>
+        <div class="container">
+            <h1>✨ ls-f</h1>
+            <p>A Beautiful <code style="background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 4px;">ls</code> with Icons 🎨</p>
+            <p style="font-size: 1em; opacity: 0.85;">Transform your terminal with file-type-specific icons and colors</p>
+            <div class="hero-buttons">
+                <a href="#installation" class="btn btn-primary">Get Started</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+                <a href="https://github.com/swadhin-biswas/ls-f" class="btn btn-primary">GitHub Repo</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="container">
+            <h2>🌟 <span>Key Features</span></h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Visual Clarity</h3>
+                    <p>Instantly recognize files with type-specific icons using Nerd Fonts. Never get confused again!</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Full Compatibility</h3>
+                    <p>Supports all standard <code>ls</code> flags: <code>-a</code>, <code>-l</code>, <code>-R</code>, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Minimal overhead—runs as fast as the standard <code>ls</code> command.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Customizable</h3>
+                    <p>Override icons and colors via configuration file to match your style.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Cross-Platform</h3>
+                    <p>Works on Linux, macOS, WSL, and other Unix-like systems.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Safe Fallbacks</h3>
+                    <p>Automatically disables icons on incompatible systems. Works without Nerd Fonts.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section>
+        <div class="container">
+            <h2>📺 <span>Live Demo</span></h2>
+            <div class="demo-section">
+                <h3 style="margin-bottom: 20px;">Grid View (Default)</h3>
+                <div class="demo-output">
+$ lsf<br>
+ LICENSE           README.md         column.py         config/<br>
+ install.sh        lsf               INSTALL.md        docs/
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 20px;">Long Format</h3>
+                <div class="demo-output">
+$ lsf -l<br>
+ drwx------ 4 swadhin swadhin 4096 Oct 16 10:32 config/<br>
+ -rwxr-xr-x 1 swadhin swadhin  10K Oct 16 10:31 lsf<br>
+ -rw-r--r-- 1 swadhin swadhin 2.5K Oct 16 10:30 README.md<br>
+ -rw-r--r-- 1 swadhin swadhin  948 Oct 16 10:29 column.py
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation">
+        <div class="container">
+            <h2>🚀 <span>Quick Installation</span></h2>
+            <div class="installation-methods">
+                <div class="method-card">
+                    <h3>Method 1: Git Clone</h3>
+                    <p>Recommended for latest features</p>
+                    <pre>git clone https://github.com/swadhin-biswas/ls-f.git
+cd ls-f
+./install.sh --user
+
+# Verify
+lsf --version
+lsf -x</pre>
+                </div>
+                <div class="method-card">
+                    <h3>Method 2: One-Liner</h3>
+                    <p>Clone and install in one step</p>
+                    <pre>git clone https://github.com/swadhin-biswas/\
+ls-f.git && cd ls-f && ./install.sh --user</pre>
+                </div>
+                <div class="method-card">
+                    <h3>Method 3: Direct Download</h3>
+                    <p>Download both files manually</p>
+                    <pre>sudo curl -fL https://raw.githubusercontent.com/\
+swadhin-biswas/ls-f/main/lsf -o /usr/local/bin/lsf
+sudo curl -fL https://raw.githubusercontent.com/\
+swadhin-biswas/ls-f/main/column.py -o /usr/local/bin/column.py
+sudo chmod +x /usr/local/bin/lsf /usr/local/bin/column.py</pre>
+                </div>
+            </div>
+
+            <div class="demo-section" style="margin-top: 40px;">
+                <h3 style="margin-bottom: 15px; color: var(--primary); font-weight: 700;">Setup Alias (Optional)</h3>
+                <p style="margin-bottom: 15px; color: var(--text-light);">Replace your default <code>ls</code> with <code>lsf</code>:</p>
+                <pre>echo "alias ls='lsf'" >> ~/.bashrc
+source ~/.bashrc</pre>
+                <p style="color: var(--text-light); margin-top: 15px;">For Zsh, use <code>~/.zshrc</code> instead.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section>
+        <div class="container">
+            <h2>📖 <span>Usage Examples</span></h2>
+            <div class="demo-section">
+                <pre>lsf              # List files with icons
+lsf -a           # List all files (including hidden)
+lsf -A           # Almost all (skip . and ..)
+lsf -l           # Long format
+lsf -la          # Long format + all files
+lsf -x           # Horizontal layout
+lsf -X           # Sort by extension
+lsf -Z           # Show security context
+lsf -R           # Recursive listing
+lsf --zero       # NUL-terminated output
+lsf --help       # Show help message
+lsf --version    # Show version</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Prerequisites Section -->
+    <section>
+        <div class="container">
+            <h2>📋 <span>Prerequisites</span></h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Bash 4+</h3>
+                    <p>For full icon support. Works on any POSIX shell without icons.</p>
+                    <p style="margin-top: 10px; color: var(--text-light);"><code>echo $BASH_VERSION</code></p>
+                </div>
+                <div class="feature-card">
+                    <h3>Python 3.x</h3>
+                    <p>For column formatting helper.</p>
+                    <p style="margin-top: 10px; color: var(--text-light);"><code>python3 --version</code></p>
+                </div>
+                <div class="feature-card">
+                    <h3>Nerd Fonts (Optional)</h3>
+                    <p>Recommended for beautiful icons.</p>
+                    <p style="margin-top: 10px; color: var(--text-light);"><code>fc-list | grep "Nerd Font"</code></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Customization Section -->
+    <section>
+        <div class="container">
+            <h2>🎨 <span>Customization</span></h2>
+            <div class="demo-section">
+                <p style="margin-bottom: 20px; color: var(--text-light);">Edit <code>~/.config/lsf/lsf.conf</code> to customize icons and colors:</p>
+                <pre># Change directory icon
+ICONS["dir"]=""
+COLORS["dir"]="94"  # Bright blue
+
+# Change Python file icon
+ICONS[".py"]=""
+COLORS[".py"]="92"  # Bright green
+
+# Change JSON file icon
+ICONS[".json"]=""
+COLORS[".json"]="36"  # Cyan</pre>
+                <p style="margin-top: 20px; color: var(--text-light);">See <a href="docs/CONFIGURATION.md" style="color: var(--primary); font-weight: 600;">Configuration Guide</a> for more options and examples.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section>
+        <div class="container">
+            <h2>❓ <span>Frequently Asked Questions</span></h2>
+
+            <div class="faq-item">
+                <h4>Q: Icons appear as boxes or question marks. What's wrong?</h4>
+                <p>A: Your terminal font is not set to a Nerd Font. Download from <a href="https://www.nerdfonts.com/" style="color: var(--primary); font-weight: 600;">nerdfonts.com</a> and set it as your terminal font.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Q: Do I need root/sudo access?</h4>
+                <p>A: No! Use <code>./install.sh --user</code> to install to <code>~/.local/bin</code> without sudo. Use <code>sudo ./install.sh --system</code> for system-wide installation.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Q: What if I don't want to replace my ls command?</h4>
+                <p>A: No problem! Just use <code>lsf</code> directly. Or set an alias, but don't alias it to <code>ls</code>. Example: <code>alias ll='lsf -l'</code></p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Q: Is it safe to use as my default ls?</h4>
+                <p>A: Yes! <code>ls-f</code> is fully compatible with all standard <code>ls</code> commands and flags. It falls back gracefully when icons aren't supported.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Q: How do I uninstall?</h4>
+                <p>A: <code>rm ~/.local/bin/lsf ~/.local/bin/column.py</code> (user install) or use sudo for system install. Remove the alias from your shell config.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Q: Does it work on macOS?</h4>
+                <p>A: Yes! Install via <code>brew install bash</code> to get Bash 4+, then install <code>ls-f</code> normally.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section>
+        <div class="container">
+            <h2>📚 <span>Documentation</span></h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div class="feature-card">
+                    <h3>📖 Installation Guide</h3>
+                    <p>Detailed step-by-step instructions for all platforms and methods.</p>
+                    <p style="margin-top: 15px;"><a href="docs/INSTALLATION.md" style="color: var(--primary); font-weight: bold;">Read Guide →</a></p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚙️ Configuration Guide</h3>
+                    <p>Learn how to customize icons, colors, and behavior.</p>
+                    <p style="margin-top: 15px;"><a href="docs/CONFIGURATION.md" style="color: var(--primary); font-weight: bold;">Read Guide →</a></p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔧 Troubleshooting</h3>
+                    <p>Solutions to common issues and problems.</p>
+                    <p style="margin-top: 15px;"><a href="docs/TROUBLESHOOTING.md" style="color: var(--primary); font-weight: bold;">Read Guide →</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section>
+        <div class="container">
+            <h2>📊 <span>Project Stats</span></h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="number">100+</div>
+                    <div class="label">File Type Icons</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">3</div>
+                    <div class="label">Install Methods</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">0ms</div>
+                    <div class="label">Overhead</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">MIT</div>
+                    <div class="label">License</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #ec4899 100%); color: white; padding: 100px 20px;">
+        <div class="container" style="text-align: center;">
+            <h2 style="color: white; margin-bottom: 20px; font-size: 2.5em;">Ready to Transform Your Terminal?</h2>
+            <p style="font-size: 1.1em; margin-bottom: 30px; color: rgba(255,255,255,0.95);">Install ls-f now and enjoy a beautiful, efficient file listing experience.</p>
+            <a href="#installation" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.1em;">Get Started Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <h3 style="margin-bottom: 20px; font-size: 1.8em;">ls-f</h3>
+            <p>A beautiful alternative to the standard <code style="background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 3px;">ls</code> command with file-type icons.</p>
+
+            <div class="links">
+                <a href="https://github.com/swadhin-biswas/ls-f">GitHub</a>
+                <a href="https://github.com/swadhin-biswas/ls-f/issues">Issues</a>
+                <a href="docs/INSTALLATION.md">Installation</a>
+                <a href="docs/CONFIGURATION.md">Configuration</a>
+                <a href="docs/TROUBLESHOOTING.md">Help</a>
+            </div>
+
+            <p style="margin-top: 30px; opacity: 0.8;">
+                © 2025 <strong>ls-f</strong> Project. Licensed under MIT.
+            </p>
+            <p style="margin-top: 10px; opacity: 0.7; font-size: 0.9em;">
+                Built with ❤️ by <a href="https://github.com/swadhin-biswas" style="color: #93c5fd; text-decoration: none;">Swadhin Biswas</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
