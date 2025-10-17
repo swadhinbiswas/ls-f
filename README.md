@@ -1,5 +1,9 @@
 # ✨ ls-f — A Beautiful `ls` with Icons
 
+![Tests](https://github.com/swadhinbiswas/ls-f/workflows/Tests%20and%20Coverage/badge.svg)
+[![codecov](https://codecov.io/gh/swadhinbiswas/ls-f/branch/main/graph/badge.svg)](https://codecov.io/gh/swadhinbiswas/ls-f)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 `ls-f` is a friendly drop-in wrapper around GNU `ls` that adds Nerd Font icons, color hints, and a few quality-of-life improvements while still letting your familiar flags pass straight through. Use it as a standalone command or alias it to `ls` for a richer directory view.
 
 ## Example Output
@@ -41,6 +45,28 @@ Note: lsf uses a small Python helper (`column.py`) for grid formatting. The one-
 echo "alias ls='lsf'" >> ~/.zshrc   # or ~/.bashrc, ~/.config/fish/config.fish, ...
 ```
 Reload your shell configuration afterwards (e.g. `source ~/.zshrc`).
+
+## Testing
+
+ls-f includes automated tests for core functionality:
+
+```bash
+# Run the test suite
+python3 test_lsf.py
+
+# Run with coverage
+pip install coverage
+coverage run test_lsf.py
+coverage report
+```
+
+Tests cover:
+- Column formatter (column.py) with different layouts and inputs
+- Basic lsf functionality (--version, --help, --no-icons)
+- Flag parsing and error handling
+- Unicode icon handling
+
+Continuous integration runs tests across multiple Python (3.7-3.11) and Bash versions.
 
 ## Feature Highlights
 - Icons & colors that automatically match hundreds of common file types

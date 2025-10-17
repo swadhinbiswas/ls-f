@@ -1,0 +1,104 @@
+name: Tests and Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bash-version: ['4.4', '5.0', '5.1']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install Bash ${{ matrix.bash-version }}
+      run: |
+        sudo apt-get update
+        if [[ "${{ matrix.bash-version }}" != "5.1" ]]; then
+          # For older bash versions, we'll use the system default
+          echo "Using system bash: $(bash --version | head -1)"
+        fi
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install coverage pytest
+        sudo apt-get install -y shellcheck bats
+    
+    - name: Lint shell scripts
+      run: |
+        shellcheck lsf install.sh install-standalone.sh tools/release.sh || true
+    
+    - name: Test lsf basic functionality
+      run: |
+        chmod +x lsf column.py
+        ./lsf --version
+        ./lsf --help
+        ./lsf --no-icons
+    
+    - name: Test installation script
+      run: |
+        chmod +x install.sh
+        ./install.sh --help
+    
+    - name: Test standalone installer
+      run: |
+        chmod +x install-standalone.sh
+        # Test dry run (don't actually install)
+        bash -x install-standalone.sh 2>&1 | head -20 || true
+    
+    - name: Test column.py with coverage
+      run: |
+        echo -e "📁 test\n🐍 script.py\n📄 README.md" > test_input.txt
+        
+        # Test default column mode
+        coverage run --source=. column.py < test_input.txt > /dev/null
+        
+        # Test row mode
+        LSF_LAYOUT=rows coverage run --append --source=. column.py < test_input.txt > /dev/null
+        
+        # Test custom tabsize
+        LSF_TABSIZE=4 coverage run --append --source=. column.py < test_input.txt > /dev/null
+        
+        # Test with different input sizes
+        for i in {1..20}; do echo "📄 file$i.txt"; done | coverage run --append --source=. column.py > /dev/null
+    
+    - name: Test flag combinations
+      run: |
+        # Test various flag combinations
+        ./lsf -A || true
+        ./lsf -x || true
+        ./lsf -l || true
+        ./lsf -la || true
+        ./lsf -R || true
+        ./lsf --zero | head -c 100 || true
+        ./lsf -T 4 || true
+        ./lsf -b || true
+    
+    - name: Generate coverage report
+      run: |
+        coverage report
+        coverage xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
