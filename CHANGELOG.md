@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.5.1] - 2025-10-17
+### Added
+- Standalone installer (install-standalone.sh) for convenient pipe-to-bash installation
+- Comprehensive development roadmap with versioned milestones through v5.0.0
+- GitHub Actions workflow to build and upload release artifacts on tags
+- Makefile `release` target to build local artifacts
+
+### Fixed
+- Documentation: correct GitHub owner to `swadhinbiswas` across README, site, and docs
+- Installation: clarify that both `lsf` and `column.py` are required; restore pipe-to-bash convenience
+
+### Changed
+- README: embed example screenshot; improve customization examples
+- Primary installation method is now one-liner: `curl ... | bash`
+
 ## [4.5.0] - 2025-10-16
 ### Added
 - Horizontal layout (-x) with row-major grid formatting
@@ -25,4 +40,4 @@ All notable changes to this project will be documented in this file.
 ### Removed
 - Deprecated ls-material.sh script
 
-[4.5.0]: https://github.com/swadhin-biswas/ls-f/releases/tag/v4.5.0
+[4.5.0]: https://github.com/swadhinbiswas/ls-f/releases/tag/v4.5.0

@@ -1,30 +1,27 @@
-# Release Notes — v4.5.0
+# Release Notes — v4.5.1
 
-This release turns ls-f into a production-ready, icon-enhanced wrapper around GNU ls with strong compatibility and a polished install path.
+Documentation improvements and installation convenience update.
 
-## Highlights
-- Native support: -x, -X, -T/--tabsize, -Z/--context, --zero, -b/--escape
-- Smarter formatting powered by column.py (row/column layouts, tabsize)
-- Installer with user/system modes and post-install verification
-- Comprehensive docs and website with demo screenshot
+## New Features
+- **Standalone installer**: One-liner installation via `curl ... | bash`
+- **Development roadmap**: Comprehensive plan through v5.0.0 with milestones
+- **Automated releases**: GitHub Actions workflow builds artifacts on tags
 
-## What's New
-- Horizontal by-lines layout (-x)
-- Sort by extension (-X)
-- Security context display (-Z/--context)
-- NUL-terminated output (--zero)
-- C-style escapes for reliable icon lookup (-b/--escape)
-- Environment-driven formatter (LSF_LAYOUT, LSF_TABSIZE)
+## Fixes
+- Clarify installation requires both `lsf` and `column.py`
+- Restore convenient pipe-to-bash installation method
 
-## Installation
-- Recommended: git clone and run ./install.sh --user
-- Or download both lsf and column.py to your bin directory
+## How to Install
+```bash
+# One-liner (recommended)
+curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash
 
-## Compatibility
-Most GNU ls flags pass through unchanged. See README for the compatibility roadmap with statuses.
+# Or clone and install
+git clone https://github.com/swadhinbiswas/ls-f.git && cd ls-f && ./install.sh --user
+```
+
+## Coming Next
+See the roadmap in README.md for upcoming features like `-1`, `-w`, `-m` flag support and performance improvements.
 
 ## Checksums
-SHA256 sums are provided alongside release archives for verification.
-
-## Thanks
-Thanks to contributors and users for testing and feedback.
+SHA256 sums are provided with the release archives for verification.
