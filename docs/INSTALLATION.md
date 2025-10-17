@@ -34,14 +34,29 @@ If you don't have Nerd Fonts, download from [nerdfonts.com](https://www.nerdfont
 
 ## 🚀 Installation Methods
 git clone https://github.com/swadhinbiswas/ls-f.git
-### Method 1: Git Clone (Recommended)
+### Method 1: One-Liner Install (Recommended)
 
-This method gives you the latest development version.
+Quickest method - downloads both files and installs automatically:
 
 ```bash
+# User-local installation (no sudo needed)
+curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash
+
+# OR system-wide installation
+curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash -s system
+
+# Verify installation
+lsf --version
+lsf -x
+```
+
+### Method 2: Git Clone
+
+For development or customization:
+
 ```bash
 # Clone the repository
-git clone https://github.com/swadhin-biswas/ls-f.git
+git clone https://github.com/swadhinbiswas/ls-f.git
 cd ls-f
 
 # User-local installation (no sudo needed, default for non-root)

@@ -7,13 +7,13 @@ A one-page cheat sheet for **ls-f** users and developers.
 ## 🚀 Installation (One Minute)
 
 ```bash
-# User install (no sudo)
-./install.sh --user
+# Pipe-to-bash (downloads both files automatically)
+curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash
 
-# System install (requires sudo)
-sudo ./install.sh --system
+# Or for system-wide install
+curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash -s system
 
-# Or clone one-liner (recommended)
+# Or clone and install locally
 git clone https://github.com/swadhinbiswas/ls-f.git && cd ls-f && ./install.sh --user
 ```
 

@@ -25,12 +25,16 @@ $ ./lsf -x
 
 ### Install
 ```bash
+# One-liner (downloads both lsf and column.py automatically)
+curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash
+
+# Or clone and install
 git clone https://github.com/swadhinbiswas/ls-f.git
 cd ls-f
 ./install.sh --user      # or: sudo ./install.sh --system
 ```
 
-Note: lsf uses a small Python helper (`column.py`) for grid formatting. The installer installs both `lsf` and `column.py`. If installing manually, make sure both are present in your PATH.
+Note: lsf uses a small Python helper (`column.py`) for grid formatting. The one-liner installer downloads both files automatically. The repository installer also installs both `lsf` and `column.py`. If installing manually, make sure both are present in your PATH.
 
 ### Optional: Alias `ls`
 ```bash
@@ -139,7 +143,7 @@ Legend: `✅ Native` = icon-aware handling built into `ls-f`; `🟡 Pass-through
 ## Customization
 Override any icon or color in `~/.config/lsf`:
 ```bash
-# nano lsf or nvim lsf 
+# nano lsf or nvim lsf
 ICONS["dir"]=""
 COLORS["dir"]="34"
 ICONS[".py"]="🐍"
