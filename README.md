@@ -140,6 +140,73 @@ The table below inventories the remaining GNU `ls` flags and notes their current
 
 Legend: `✅ Native` = icon-aware handling built into `ls-f`; `🟡 Pass-through` = delegated to `ls` today but slated for native polish; `🛠️ Planned` = not yet behaving like GNU `ls` when icons are enabled.
 
+## Next Steps: Development Roadmap
+
+### v4.6.0 - Enhanced Formatting & Display
+**Priority: High** | **Target: Q1 2025**
+
+- **`-1` (one per line)**: Override column formatter to respect single-column output
+- **`-w`, `--width=COLS`**: Pass terminal width to column.py for proper wrapping
+- **`-m` (comma-separated)**: Icon-aware comma formatting for compact output
+- **`--color` integration**: Smart color passthrough without conflicting with icons
+- **Directory coloring**: Enhance folder icon colors based on permissions/type
+
+### v4.7.0 - Advanced GNU ls Parity
+**Priority: Medium** | **Target: Q2 2025**
+
+- **`-Q`, `--quote-name`**: Quote-aware icon detection and placement
+- **`--quoting-style=WORD`**: Support all GNU ls quoting styles with icons
+- **`-F`, `--classify` native**: Icon + indicator combinations (e.g., 🐍script.py*)
+- **`--hyperlink`**: OSC 8 hyperlink support with icon preservation
+- **`-g`, `-o`, `-G`**: Native long format variants with proper icon alignment
+
+### v4.8.0 - Performance & Efficiency
+**Priority: Medium** | **Target: Q3 2025**
+
+- **Caching layer**: Icon lookup cache for large directories
+- **Async processing**: Parallel icon resolution for recursive listings
+- **Memory optimization**: Reduce overhead for very large directory trees
+- **Config preprocessing**: Compile icon rules for faster matching
+
+### v5.0.0 - Extended Features
+**Priority: Low** | **Target: Q4 2025**
+
+- **Custom icon themes**: Theme system (material, nerd, emoji, ascii)
+- **Plugin architecture**: External icon providers and formatters
+- **Terminal capability detection**: Auto-disable features on limited terminals
+- **Network file support**: Icons for remote/mounted filesystems
+- **Integration helpers**: Git status indicators, file age colors, size categories
+
+### Beyond v5.0 - Future Vision
+
+- **Shell integration**: Native completions for bash/zsh/fish
+- **GUI file manager**: GTK/Qt frontend using ls-f as backend
+- **Cross-platform**: Windows PowerShell module, macOS Finder integration
+- **Language bindings**: Python/Node.js APIs for programmatic use
+- **Cloud support**: S3, Google Drive, Dropbox icon providers
+
+### Contributing Priorities
+
+**🔥 Hot Areas** (easy wins, high impact):
+1. Fix `-1` and `-w` flag handling in column.py
+2. Add more file type icons (current: ~100, target: 500+)
+3. Improve error messages and help text
+4. Add regression test coverage for new flags
+
+**💡 Medium Effort**:
+1. Quote-style and classifier integration
+2. Color scheme management and themes
+3. Performance profiling and optimization
+4. Windows/macOS platform testing
+
+**🚀 Ambitious Projects**:
+1. Plugin system design and implementation
+2. GUI frontend development
+3. Shell completion generators
+4. Language binding APIs
+
+Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and [the issues page](https://github.com/swadhinbiswas/ls-f/issues) for specific tasks!
+
 ## Customization
 Override any icon or color in `~/.config/lsf`:
 ```bash
