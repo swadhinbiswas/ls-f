@@ -33,7 +33,7 @@ If you don't have Nerd Fonts, download from [nerdfonts.com](https://www.nerdfont
 ---
 
 ## 🚀 Installation Methods
-
+git clone https://github.com/swadhinbiswas/ls-f.git
 ### Method 1: Git Clone (Recommended)
 
 This method gives you the latest development version.
@@ -54,20 +54,20 @@ sudo ./install.sh --system
 lsf --version
 lsf -x
 ```
-
+sudo ./install.sh --system
 ### Method 2: Direct Download
 
 # Verify installation
 lsf --version
-lsf -x
+ Download both scripts directly from GitHub:
 ```
 
 ### Method 2: Direct Download
-
+sudo curl -fL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/lsf \
 Download both scripts directly from GitHub:
 
 ```bash
-# Download lsf to /usr/local/bin (requires sudo)
+sudo curl -fL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/column.py \
 sudo curl -fL https://raw.githubusercontent.com/swadhin-biswas/ls-f/main/lsf \
   -o /usr/local/bin/lsf
 
@@ -77,10 +77,10 @@ sudo curl -fL https://raw.githubusercontent.com/swadhin-biswas/ls-f/main/column.
 
 # Make both executable
 sudo chmod +x /usr/local/bin/lsf /usr/local/bin/column.py
-
+git clone https://github.com/swadhinbiswas/ls-f.git && cd ls-f && ./install.sh --user
 # Create config directory
 mkdir -p ~/.config/lsf
-
+git clone https://github.com/swadhinbiswas/ls-f.git && cd ls-f && sudo ./install.sh --system
 # Verify installation
 lsf --version
 lsf -x
@@ -89,11 +89,10 @@ lsf -x
 ### Method 3: One-Liner Installation
 
 Clone and install in a single command:
-
+git clone https://github.com/swadhinbiswas/ls-f.git
 ```bash
 # User installation (no sudo needed)
 git clone https://github.com/swadhin-biswas/ls-f.git && cd ls-f && ./install.sh --user
-
 # System-wide installation
 git clone https://github.com/swadhin-biswas/ls-f.git && cd ls-f && sudo ./install.sh --system
 ```
@@ -176,7 +175,6 @@ sudo ./install.sh --system --replace-ls
 ### Verify Installation
 
 ```bash
-# Check if lsf is in PATH
 which lsf
 
 # Test basic functionality
@@ -261,7 +259,6 @@ source config/lsf_alias_setup.sh
 **Problem:** Can't write to installation directory.
 
 **Solution:** Use sudo for system install:
-```bash
 sudo ./install.sh --system
 ```
 
@@ -277,7 +274,6 @@ Or use user install:
 **Solution (User Install):**
 
 Add `~/.local/bin` to your PATH:
-
 ```bash
 # For Bash - add to ~/.bashrc
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
@@ -316,13 +312,9 @@ cd ls-f
 sudo apt install python3
 
 # Fedora/RHEL
-sudo dnf install python3
 
 # macOS
 brew install python3
-```
-
-### Nerd Fonts Not Installed
 
 **Problem:** Icons show as boxes or question marks.
 

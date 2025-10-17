@@ -29,7 +29,7 @@ Project maintainers are responsible for clarifying and enforcing our standards.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the maintainers.
 
 - Prefer using GitHub’s private “Report a vulnerability”/contact options when applicable
-- Or contact the maintainer via their GitHub profile: @swadhin-biswas
+- Or contact the maintainer via their GitHub profile: @swadhinbiswas
 
 All complaints will be reviewed and investigated promptly and fairly.
 

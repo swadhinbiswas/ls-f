@@ -13,8 +13,8 @@ A one-page cheat sheet for **ls-f** users and developers.
 # System install (requires sudo)
 sudo ./install.sh --system
 
-# Or one-liner
-curl -fsSL https://raw.githubusercontent.com/swadhin-biswas/ls-f/main/install.sh | bash
+# Or clone one-liner (recommended)
+git clone https://github.com/swadhinbiswas/ls-f.git && cd ls-f && ./install.sh --user
 ```
 
 ---

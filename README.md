@@ -30,6 +30,8 @@ cd ls-f
 ./install.sh --user      # or: sudo ./install.sh --system
 ```
 
+Note: lsf uses a small Python helper (`column.py`) for grid formatting. The installer installs both `lsf` and `column.py`. If installing manually, make sure both are present in your PATH.
+
 ### Optional: Alias `ls`
 ```bash
 echo "alias ls='lsf'" >> ~/.zshrc   # or ~/.bashrc, ~/.config/fish/config.fish, ...

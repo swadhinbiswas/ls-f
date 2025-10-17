@@ -7,7 +7,7 @@ We support the latest release on the `main` branch (e.g., v4.5.x). Older release
 Please do not open public GitHub issues for security problems.
 
 - Use GitHub’s “Report a vulnerability” (Security Advisory) feature if available for this repository
-- Alternatively, contact the maintainer privately via their GitHub profile (@swadhin-biswas)
+- Alternatively, contact the maintainer privately via their GitHub profile (@swadhinbiswas)
 
 Provide as much detail as possible:
 - Affected version(s) and environment (OS, shell)
