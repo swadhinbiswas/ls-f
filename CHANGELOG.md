@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.1] - 2026-02-15
+### Fixed
+- **Security Vulnerabilities**:
+  - Replaced unmaintained `users` crate with `uzers` v0.12 to address RUSTSEC-2023-0005.
+  - Removed unused `toml` and `serde` dependencies to reduce attack surface and resolve transitive vulnerabilities.
+### Changed
+- **Dependencies**:
+  - Updated `clap` to v4.5.
+  - General update of all transitive dependencies to latest compatible versions.
+
 ## [5.0.0] - 2026-02-15
 ### Added
 - **Complete Rewrite in Rust**: Transitioned from a Bash/Python hybrid to a native Rust implementation for massive performance gains.
@@ -58,6 +68,7 @@ All notable changes to this project will be documented in this file.
 ### Removed
 - Deprecated ls-material.sh script
 
+[5.0.1]: https://github.com/swadhinbiswas/ls-f/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/swadhinbiswas/ls-f/compare/v4.5.1...v5.0.0
 [4.5.1]: https://github.com/swadhinbiswas/ls-f/compare/v4.5.0...v4.5.1
 [4.5.0]: https://github.com/swadhinbiswas/ls-f/releases/tag/v4.5.0

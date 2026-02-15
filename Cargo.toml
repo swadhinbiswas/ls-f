@@ -1,6 +1,6 @@
 [package]
 name = "lsf"
-version = "5.0.0"
+version = "5.0.1"
 edition = "2021"
 authors = ["swadhinbiswas"]
 description = "A beautiful ls replacement with Nerd Font icons and colors"
