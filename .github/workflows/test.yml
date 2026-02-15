@@ -7,7 +7,22 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  rust-test:
+    name: Rust (v5.0.x)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Build
+      run: cargo build --verbose
+    - name: Run help
+      run: cargo run -- --help
+    - name: Run version
+      run: cargo run -- --version
+
+  legacy-test:
+    name: Legacy Bash/Python (v4.x)
     runs-on: ubuntu-latest
     strategy:
       matrix:
