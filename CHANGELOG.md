@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.0] - 2026-02-15
+### Added
+- **Complete Rewrite in Rust**: Transitioned from a Bash/Python hybrid to a native Rust implementation for massive performance gains.
+- **Tree View**: Added native tree visualization via the `--tree` flag.
+- **Git Integration**: Built-in support for displaying git status indicators using the `--git` flag.
+- **Zero Dependencies**: The tool is now a single static binary with no runtime dependencies on Bash or Python.
+- **Improved Benchmarks**: Competitive with and often faster than GNU `ls` for colorized output.
+- **Native Recursive Sorting**: Improved handling of recursive listings and depth control.
+
+### Changed
+- **Performance**: Significant reduction in startup time and listing speed for large directories.
+- **Documentation**: Overhauled README, Installation, and Troubleshooting guides to reflect the Rust transition.
+- **Installation**: New `make install` and `cargo install` methods added to the preferred workflow.
+
+### Fixed
+- Fixed icon misalignment issues in long listing formats.
+- Resolved various shell-specific escaping bugs from the legacy version.
+
 ## [4.5.1] - 2025-10-17
 ### Added
 - Standalone installer (install-standalone.sh) for convenient pipe-to-bash installation
@@ -40,4 +58,6 @@ All notable changes to this project will be documented in this file.
 ### Removed
 - Deprecated ls-material.sh script
 
+[5.0.0]: https://github.com/swadhinbiswas/ls-f/compare/v4.5.1...v5.0.0
+[4.5.1]: https://github.com/swadhinbiswas/ls-f/compare/v4.5.0...v4.5.1
 [4.5.0]: https://github.com/swadhinbiswas/ls-f/releases/tag/v4.5.0
