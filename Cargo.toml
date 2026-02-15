@@ -1,0 +1,33 @@
+[package]
+name = "lsf"
+version = "5.0.0"
+edition = "2021"
+authors = ["swadhinbiswas"]
+description = "A beautiful ls replacement with Nerd Font icons and colors"
+license = "MIT"
+repository = "https://github.com/swadhinbiswas/ls-f"
+readme = "README.md"
+keywords = ["ls", "cli", "icons", "nerd-font", "terminal"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "lsf"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+terminal_size = "0.4"
+chrono = "0.4"
+users = "0.11"
+libc = "0.2"
+unicode-width = "0.2"
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+dirs = "6"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
