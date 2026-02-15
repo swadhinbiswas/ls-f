@@ -2,6 +2,7 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/swadhinbiswas/ls-f?color=orange&logo=rust)](https://github.com/swadhinbiswas/ls-f/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/swadhinbiswas?color=ea4aaa)](https://github.com/sponsors/swadhinbiswas)
 
 **ls-f** is a modern, blazing-fast `ls` replacement. Originally a bash wrapper, it has been completely rewritten in **Rust (v5.0.0)** to provide superior performance, a native tree view, and zero runtime dependencies.
 
@@ -93,6 +94,18 @@ Contributions are welcome!
 3. Commit your changes (`git commit -m 'Add AmazingFeature'`).
 4. Push to the branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request.
+
+---
+
+## 💖 Support the Project
+
+If you find **ls-f** helpful, consider supporting its development:
+
+- **GitHub Sponsors:** [swadhinbiswas](https://github.com/sponsors/swadhinbiswas)
+- **Binance Pay / Crypto:** `swadhinbiswas.cse@gmail.com`
+
+### Recent Sponsors
+- **[Catgle](https://github.com/Catgle)**
 
 ---
 
