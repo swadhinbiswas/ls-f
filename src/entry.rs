@@ -375,7 +375,7 @@ pub fn get_username(uid: u32, cache: &mut HashMap<u32, String>) -> String {
     if let Some(name) = cache.get(&uid) {
         return name.clone();
     }
-    let name = users::get_user_by_uid(uid)
+    let name = uzers::get_user_by_uid(uid)
         .map(|u| u.name().to_string_lossy().into_owned())
         .unwrap_or_else(|| uid.to_string());
     cache.insert(uid, name.clone());
@@ -387,7 +387,7 @@ pub fn get_groupname(gid: u32, cache: &mut HashMap<u32, String>) -> String {
     if let Some(name) = cache.get(&gid) {
         return name.clone();
     }
-    let name = users::get_group_by_gid(gid)
+    let name = uzers::get_group_by_gid(gid)
         .map(|g| g.name().to_string_lossy().into_owned())
         .unwrap_or_else(|| gid.to_string());
     cache.insert(gid, name.clone());
