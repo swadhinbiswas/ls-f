@@ -50,12 +50,6 @@ make install  # Installs to /usr/local/bin
 ```
 *Or via cargo:* `cargo install --path .`
 
-### 2. Quick Install (Legacy Bash)
-If you don't have Rust installed, you can use the legacy bash wrapper (v1.x).
-```bash
-curl -fsSL https://raw.githubusercontent.com/swadhinbiswas/ls-f/main/install-standalone.sh | bash
-```
-
 ---
 
 ## 📖 Usage
