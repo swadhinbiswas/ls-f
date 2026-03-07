@@ -1,6 +1,6 @@
 [package]
 name = "lsf"
-version = "5.0.1"
+version = "5.1.0"
 edition = "2021"
 rust-version = "1.74"
 authors = ["swadhinbiswas"]
