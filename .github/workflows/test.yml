@@ -1,119 +1,123 @@
-name: Tests and Coverage
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
 
 jobs:
-  rust-test:
-    name: Rust (v5.0.x)
+  fmt:
+    name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-    - name: Build
-      run: cargo build --verbose
-    - name: Run help
-      run: cargo run -- --help
-    - name: Run version
-      run: cargo run -- --version
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
 
-  legacy-test:
-    name: Legacy Bash/Python (v4.x)
+  clippy:
+    name: Clippy
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets -- -D warnings
+
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        bash-version: ['5.0', '5.1']
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    
+        os: [ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install Bash ${{ matrix.bash-version }}
-      run: |
-        sudo apt-get update
-        if [[ "${{ matrix.bash-version }}" != "5.1" ]]; then
-          # For older bash versions, we'll use the system default
-          echo "Using system bash: $(bash --version | head -1)"
-        fi
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --verbose
+      - name: Run binary smoke tests
+        run: |
+          cargo run -- --help
+          cargo run -- --version
+          cargo run -- -l src/
+          cargo run -- --tree --depth 1 src/
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install coverage pytest
-        sudo apt-get install -y shellcheck bats
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsf-${{ matrix.os }}
+          path: target/release/lsf
 
-    - name: Lint shell scripts
-      run: |
-        shellcheck lsf install.sh install-standalone.sh tools/release.sh || true
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Test lsf basic functionality
-      run: |
-        chmod +x lsf column.py
-        ./lsf --version
-        ./lsf --help
-        ./lsf --no-icons
+  msrv:
+    name: MSRV Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.74
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check
 
-    - name: Test installation script
-      run: |
-        chmod +x install.sh
-        ./install.sh --help
-
-    - name: Test standalone installer
-      run: |
-        chmod +x install-standalone.sh
-        # Test dry run (don't actually install)
-        bash -x install-standalone.sh 2>&1 | head -20 || true
-
-    - name: Test column.py with coverage
-      run: |
-        echo -e "📁 test\n🐍 script.py\n📄 README.md" > test_input.txt
-
-        # Test default column mode
-        coverage run --source=. column.py < test_input.txt > /dev/null
-
-        # Test row mode
-        LSF_LAYOUT=rows coverage run --append --source=. column.py < test_input.txt > /dev/null
-
-        # Test custom tabsize
-        LSF_TABSIZE=4 coverage run --append --source=. column.py < test_input.txt > /dev/null
-
-        # Test with different input sizes
-        for i in {1..20}; do echo "📄 file$i.txt"; done | coverage run --append --source=. column.py > /dev/null
-
-    - name: Test flag combinations
-      run: |
-        # Test various flag combinations
-        ./lsf -A || true
-        ./lsf -x || true
-        ./lsf -l || true
-        ./lsf -la || true
-        ./lsf -R || true
-        ./lsf --zero | head -c 100 || true
-        ./lsf -T 4 || true
-        ./lsf -b || true
-
-    - name: Generate coverage report
-      run: |
-        coverage report
-        coverage xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-        verbose: true
-        token: ${{ secrets.CODECOV_TOKEN }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  # This job gates merges — add it as a required status check in branch protection
+  ci-pass:
+    name: CI Pass
+    if: always()
+    needs: [fmt, clippy, test, build, audit, msrv]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.fmt.result }}" != "success" ]]; then
+            echo "fmt failed"
+            exit 1
+          fi
+          if [[ "${{ needs.clippy.result }}" != "success" ]]; then
+            echo "clippy failed"
+            exit 1
+          fi
+          if [[ "${{ needs.test.result }}" != "success" ]]; then
+            echo "test failed"
+            exit 1
+          fi
+          if [[ "${{ needs.build.result }}" != "success" ]]; then
+            echo "build failed"
+            exit 1
+          fi
+          if [[ "${{ needs.audit.result }}" != "success" ]]; then
+            echo "audit failed"
+            exit 1
+          fi
+          if [[ "${{ needs.msrv.result }}" != "success" ]]; then
+            echo "msrv check failed"
+            exit 1
+          fi
+          echo "All CI checks passed!"

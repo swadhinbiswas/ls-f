@@ -10,9 +10,8 @@ pub fn display_width(s: &str) -> usize {
 pub fn strip_ansi(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     let mut in_escape = false;
-    let mut chars = s.chars();
 
-    while let Some(c) = chars.next() {
+    for c in s.chars() {
         if c == '\x1b' {
             in_escape = true;
             continue;
@@ -48,7 +47,7 @@ pub fn format_grid(items: &[String], term_width: usize, tabsize: usize, by_rows:
     let col_width = if max_len == 0 {
         tabsize
     } else {
-        let w = ((max_len + tabsize - 1) / tabsize) * tabsize;
+        let w = max_len.div_ceil(tabsize) * tabsize;
         if w <= max_len {
             max_len + tabsize
         } else {
@@ -57,7 +56,7 @@ pub fn format_grid(items: &[String], term_width: usize, tabsize: usize, by_rows:
     };
 
     let cols = (term_width / col_width).max(1);
-    let rows = (items.len() + cols - 1) / cols;
+    let rows = items.len().div_ceil(cols);
 
     let mut output = String::with_capacity(items.len() * (col_width + 2));
 

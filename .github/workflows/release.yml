@@ -5,35 +5,94 @@ on:
     tags:
       - 'v*'
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  build-and-release:
-    name: Build and upload release artifacts
-    runs-on: ubuntu-latest
+  # Build Rust binaries for multiple platforms
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: lsf-linux-x86_64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: lsf-linux-aarch64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact: lsf-macos-x86_64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: lsf-macos-aarch64
 
     permissions:
-      contents: write  # needed to upload assets and create releases
+      contents: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up bash
-        run: echo "Using bash $BASH_VERSION"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/lsf dist/${{ matrix.artifact }}
+          cd dist
+          tar czf ${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}
+          sha256sum ${{ matrix.artifact }}.tar.gz > ${{ matrix.artifact }}.tar.gz.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.tar.gz*
+
+  # Create GitHub release with all artifacts
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Extract version from tag
         id: version
         run: |
           ref="${GITHUB_REF##*/}"
-          # ref is like v4.5.0
           echo "tag=$ref" >> "$GITHUB_OUTPUT"
           echo "version=${ref#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Make release script executable
-        run: chmod +x tools/release.sh
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
-      - name: Build artifacts
+      - name: Collect release files
         run: |
-          ./tools/release.sh "${{ steps.version.outputs.version }}"
+          mkdir -p dist
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.sha256" \) -exec cp {} dist/ \;
+          ls -la dist/
 
       - name: Generate release notes
         id: notes
@@ -43,7 +102,27 @@ jobs:
             cat RELEASE_NOTES.md >> $GITHUB_OUTPUT
             echo 'EOF' >> $GITHUB_OUTPUT
           else
-            echo 'notes=Release' >> $GITHUB_OUTPUT
+            cat > /tmp/notes.md << 'NOTES'
+          ## Install
+
+          ### From crates.io
+          ```sh
+          cargo install lsf
+          ```
+
+          ### From binary
+          Download the appropriate binary for your platform below and place it in your `$PATH`.
+
+          | Platform | File |
+          |----------|------|
+          | Linux x86_64 | `lsf-linux-x86_64.tar.gz` |
+          | Linux aarch64 | `lsf-linux-aarch64.tar.gz` |
+          | macOS x86_64 | `lsf-macos-x86_64.tar.gz` |
+          | macOS aarch64 (Apple Silicon) | `lsf-macos-aarch64.tar.gz` |
+          NOTES
+            echo 'notes<<EOF' >> $GITHUB_OUTPUT
+            cat /tmp/notes.md >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
           fi
 
       - name: Create GitHub Release
@@ -54,7 +133,4 @@ jobs:
           body: ${{ steps.notes.outputs.notes }}
           draft: false
           prerelease: false
-          files: |
-            dist/ls-f-${{ steps.version.outputs.version }}.tar.gz
-            dist/ls-f-${{ steps.version.outputs.version }}.zip
-            dist/ls-f-${{ steps.version.outputs.version }}.SHA256SUMS
+          files: dist/*

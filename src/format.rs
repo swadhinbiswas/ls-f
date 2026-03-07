@@ -35,12 +35,10 @@ pub fn format_permissions(mode: u32, is_dir: bool, is_symlink: bool) -> String {
         } else {
             'S'
         }
+    } else if mode & 0o100 != 0 {
+        'x'
     } else {
-        if mode & 0o100 != 0 {
-            'x'
-        } else {
-            '-'
-        }
+        '-'
     });
 
     // Group
@@ -52,12 +50,10 @@ pub fn format_permissions(mode: u32, is_dir: bool, is_symlink: bool) -> String {
         } else {
             'S'
         }
+    } else if mode & 0o010 != 0 {
+        'x'
     } else {
-        if mode & 0o010 != 0 {
-            'x'
-        } else {
-            '-'
-        }
+        '-'
     });
 
     // Others
@@ -69,12 +65,10 @@ pub fn format_permissions(mode: u32, is_dir: bool, is_symlink: bool) -> String {
         } else {
             'T'
         }
+    } else if mode & 0o001 != 0 {
+        'x'
     } else {
-        if mode & 0o001 != 0 {
-            'x'
-        } else {
-            '-'
-        }
+        '-'
     });
 
     s
@@ -139,6 +133,7 @@ pub fn format_time(time: Option<SystemTime>) -> String {
 }
 
 /// Format a long-listing line for a single entry.
+#[allow(clippy::too_many_arguments)]
 pub fn format_long_entry(
     entry: &FileEntry,
     icon_str: &str,

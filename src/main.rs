@@ -1,6 +1,7 @@
 mod cli;
 mod entry;
 mod format;
+mod git;
 mod grid;
 mod icons;
 mod output;
@@ -48,8 +49,25 @@ fn main() {
                 );
                 continue;
             }
+
+            // Load git status for tree view
+            let git_repo = if args.git {
+                git::load_git_status(path)
+            } else {
+                None
+            };
+
             if let Err(e) = output::print_tree(
-                &mut out, path, &args, &icon_map, use_color, show_icons, "", true, 0,
+                &mut out,
+                path,
+                &args,
+                &icon_map,
+                use_color,
+                show_icons,
+                "",
+                true,
+                0,
+                git_repo.as_ref(),
             ) {
                 eprintln!("lsf: {}: {}", path_str, e);
             }

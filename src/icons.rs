@@ -530,6 +530,7 @@ pub fn build_icon_map() -> HashMap<&'static str, IconEntry> {
 /// `is_hidden` indicates whether the entry starts with '.'.
 /// `is_symlink` indicates whether the entry is a symbolic link.
 /// `is_executable` indicates whether the entry has execute permission.
+#[allow(clippy::too_many_arguments)]
 pub fn get_icon<'a>(
     icon_map: &'a HashMap<&str, IconEntry>,
     name: &str,

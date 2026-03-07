@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::cli::Args;
 use crate::entry::{self, FileEntry};
 use crate::format;
+use crate::git::{self, GitRepo};
 use crate::grid;
 use crate::icons::{self, IconEntry};
 
@@ -53,6 +54,14 @@ pub fn run(args: &Args) -> io::Result<()> {
 
     // Print file arguments first
     if !file_entries.is_empty() {
+        // Apply git status to file entries
+        if args.git {
+            let cwd = std::env::current_dir().unwrap_or_else(|_| Path::new(".").to_path_buf());
+            if let Some(git_repo) = git::load_git_status(&cwd) {
+                entry::apply_git_status(&mut file_entries, &git_repo);
+            }
+        }
+
         entry::sort_entries(&mut file_entries, args);
         print_entries(
             &mut out,
@@ -65,7 +74,7 @@ pub fn run(args: &Args) -> io::Result<()> {
             terminator,
         )?;
         if !dir_paths.is_empty() {
-            write!(out, "\n")?;
+            writeln!(out)?;
         }
     }
 
@@ -77,17 +86,29 @@ pub fn run(args: &Args) -> io::Result<()> {
 
         if show_header {
             if idx > 0 || !file_entries.is_empty() {
-                write!(out, "\n")?;
+                writeln!(out)?;
             }
             if use_color {
-                write!(out, "\x1b[1;34m{}:\x1b[0m\n", path_str)?;
+                writeln!(out, "\x1b[1;34m{}:\x1b[0m", path_str)?;
             } else {
-                write!(out, "{}:\n", path_str)?;
+                writeln!(out, "{}:", path_str)?;
             }
         }
 
+        // Load git status for this directory
+        let git_repo = if args.git {
+            git::load_git_status(path)
+        } else {
+            None
+        };
+
         match entry::read_directory(path, args) {
             Ok(mut entries) => {
+                // Apply git status
+                if let Some(ref repo) = git_repo {
+                    entry::apply_git_status(&mut entries, repo);
+                }
+
                 entry::sort_entries(&mut entries, args);
 
                 if args.is_long() {
@@ -131,8 +152,16 @@ pub fn run(args: &Args) -> io::Result<()> {
                         }
 
                         print_recursive(
-                            &mut out, &subpath, args, &icon_map, use_color, show_icons, term_width,
-                            terminator, path_str,
+                            &mut out,
+                            &subpath,
+                            args,
+                            &icon_map,
+                            use_color,
+                            show_icons,
+                            term_width,
+                            terminator,
+                            path_str,
+                            git_repo.as_ref(),
                         )?;
                     }
                 }
@@ -153,6 +182,7 @@ pub fn run(args: &Args) -> io::Result<()> {
 }
 
 /// Print entries for a single directory (not recursive, just the entries).
+#[allow(clippy::too_many_arguments)]
 fn print_entries(
     out: &mut impl Write,
     entries: &[FileEntry],
@@ -200,6 +230,7 @@ fn format_items(
     use_color: bool,
     show_icons: bool,
 ) -> Vec<String> {
+    let show_git = args.git;
     entries
         .iter()
         .map(|entry| {
@@ -214,6 +245,17 @@ fn format_items(
             if args.show_size {
                 let blocks = entry.blocks / 2;
                 item.push_str(&format!("{} ", blocks));
+            }
+
+            // Git status marker (before icon)
+            if show_git {
+                if let Some(ref status) = entry.git_status {
+                    let marker = status.marker(use_color);
+                    if !marker.is_empty() {
+                        item.push_str(marker);
+                        item.push(' ');
+                    }
+                }
             }
 
             // Icon
@@ -282,6 +324,7 @@ fn print_long(
     let human_readable = args.human_readable;
     let si = args.si;
     let numeric_ids = args.numeric_uid_gid;
+    let show_git = args.git;
 
     let mut user_cache: HashMap<u32, String> = HashMap::new();
     let mut group_cache: HashMap<u32, String> = HashMap::new();
@@ -404,6 +447,17 @@ fn print_long(
             line.push('/');
         }
 
+        // Git status marker at the end of the line
+        if show_git {
+            if let Some(ref status) = entry.git_status {
+                let marker = status.marker(use_color);
+                if !marker.is_empty() {
+                    line.push(' ');
+                    line.push_str(marker);
+                }
+            }
+        }
+
         writeln!(out, "{}", line)?;
     }
 
@@ -411,6 +465,7 @@ fn print_long(
 }
 
 /// Recursively print a subdirectory.
+#[allow(clippy::too_many_arguments)]
 fn print_recursive(
     out: &mut impl Write,
     dir_path: &str,
@@ -421,18 +476,24 @@ fn print_recursive(
     term_width: usize,
     terminator: char,
     base_path: &str,
+    git_repo: Option<&GitRepo>,
 ) -> io::Result<()> {
     let path = Path::new(dir_path);
 
-    write!(out, "\n")?;
+    writeln!(out)?;
     if use_color {
-        write!(out, "\x1b[1;34m{}:\x1b[0m\n", dir_path)?;
+        writeln!(out, "\x1b[1;34m{}:\x1b[0m", dir_path)?;
     } else {
-        write!(out, "{}:\n", dir_path)?;
+        writeln!(out, "{}:", dir_path)?;
     }
 
     match entry::read_directory(path, args) {
         Ok(mut entries) => {
+            // Apply git status
+            if let Some(repo) = git_repo {
+                entry::apply_git_status(&mut entries, repo);
+            }
+
             entry::sort_entries(&mut entries, args);
 
             if args.is_long() {
@@ -474,7 +535,7 @@ fn print_recursive(
 
                 print_recursive(
                     out, &subpath, args, icon_map, use_color, show_icons, term_width, terminator,
-                    base_path,
+                    base_path, git_repo,
                 )?;
             }
         }
@@ -487,6 +548,7 @@ fn print_recursive(
 }
 
 /// Print entries in tree view.
+#[allow(clippy::too_many_arguments)]
 pub fn print_tree(
     out: &mut impl Write,
     path: &Path,
@@ -497,9 +559,15 @@ pub fn print_tree(
     prefix: &str,
     is_last: bool,
     depth: usize,
+    git_repo: Option<&GitRepo>,
 ) -> io::Result<()> {
     let follow = args.dereference;
-    let entry = FileEntry::from_path(path, follow)?;
+    let mut entry = FileEntry::from_path(path, follow)?;
+
+    // Apply git status
+    if let Some(repo) = git_repo {
+        entry.git_status = Some(repo.status_for(path));
+    }
 
     // Print this entry
     let connector = if depth == 0 {
@@ -533,7 +601,28 @@ pub fn print_tree(
     };
 
     let colored_name = format::colorize_filename(&entry, use_color);
-    writeln!(out, "{}{}{}{}", prefix, connector, icon_str, colored_name)?;
+
+    // Git status marker
+    let git_marker = if args.git {
+        if let Some(ref status) = entry.git_status {
+            let m = status.marker(use_color);
+            if !m.is_empty() {
+                format!(" {}", m)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
+    writeln!(
+        out,
+        "{}{}{}{}{}",
+        prefix, connector, icon_str, colored_name, git_marker
+    )?;
 
     // Recurse into directories
     if entry.is_dir {
@@ -568,6 +657,7 @@ pub fn print_tree(
                     &child_prefix,
                     child_is_last,
                     depth + 1,
+                    git_repo,
                 )?;
             }
         }
