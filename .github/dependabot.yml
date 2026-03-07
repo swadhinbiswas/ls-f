@@ -17,3 +17,8 @@ updates:
       - "ci"
     commit-message:
       prefix: "ci"
+    ignore:
+      # dtolnay/rust-toolchain uses the git tag as the Rust version
+      # (e.g. @1.74 installs Rust 1.74), NOT as the action version.
+      # Dependabot incorrectly treats it as a semver bump.
+      - dependency-name: "dtolnay/rust-toolchain"
