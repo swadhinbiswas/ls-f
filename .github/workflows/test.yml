@@ -64,7 +64,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --release
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lsf-${{ matrix.os }}
           path: target/release/lsf
