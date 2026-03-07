@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use crate::cli::Args;
+use crate::git::{self, GitRepo, GitStatus};
 
 /// Represents a single file/directory entry with all metadata needed for display.
 #[derive(Debug, Clone)]
@@ -32,6 +33,7 @@ pub struct FileEntry {
     pub inode: u64,
     pub symlink_target: Option<String>,
     pub extension: String,
+    pub git_status: Option<GitStatus>,
 }
 
 impl FileEntry {
@@ -96,6 +98,7 @@ impl FileEntry {
             inode: meta.ino(),
             symlink_target,
             extension,
+            git_status: None,
         })
     }
 
@@ -194,6 +197,7 @@ pub fn read_directory(dir: &Path, args: &Args) -> std::io::Result<Vec<FileEntry>
                     inode: 0,
                     symlink_target: None,
                     extension: String::new(),
+                    git_status: None,
                 });
             }
         }
@@ -202,8 +206,22 @@ pub fn read_directory(dir: &Path, args: &Args) -> std::io::Result<Vec<FileEntry>
     Ok(entries)
 }
 
-/// Sort entries according to the arguments.
-pub fn sort_entries(entries: &mut Vec<FileEntry>, args: &Args) {
+/// Apply git status information to a list of file entries.
+pub fn apply_git_status(entries: &mut [FileEntry], git_repo: &GitRepo) {
+    for entry in entries.iter_mut() {
+        entry.git_status = Some(git_repo.status_for(&entry.path));
+    }
+}
+
+/// Load git status for a directory if --git is enabled.
+#[allow(dead_code)]
+pub fn load_git_for_dir(dir: &Path, show_git: bool) -> Option<GitRepo> {
+    if !show_git {
+        return None;
+    }
+    git::load_git_status(dir)
+}
+pub fn sort_entries(entries: &mut [FileEntry], args: &Args) {
     if args.no_sort() {
         return;
     }

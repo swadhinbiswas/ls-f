@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded square background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#shine)"/>
+  
+  <!-- Terminal window frame -->
+  <rect x="72" y="100" width="368" height="312" rx="20" ry="20" fill="#0f172a" opacity="0.9"/>
+  
+  <!-- Terminal title bar -->
+  <rect x="72" y="100" width="368" height="48" rx="20" ry="20" fill="#1e293b"/>
+  <rect x="72" y="128" width="368" height="20" fill="#1e293b"/>
+  
+  <!-- Traffic light dots -->
+  <circle cx="104" cy="124" r="8" fill="#ff5f56"/>
+  <circle cx="128" cy="124" r="8" fill="#ffbd2e"/>
+  <circle cx="152" cy="124" r="8" fill="#27c93f"/>
+  
+  <!-- File listing lines representing 'ls' output -->
+  <!-- Folder icon + name (blue) -->
+  <rect x="104" y="172" width="16" height="12" rx="2" fill="#60a5fa"/>
+  <rect x="104" y="168" width="10" height="4" rx="1" fill="#60a5fa"/>
+  <rect x="128" y="172" width="72" height="12" rx="3" fill="#60a5fa" opacity="0.9"/>
+  
+  <!-- File icon + name (green - executable) -->
+  <rect x="104" y="200" width="12" height="14" rx="2" fill="#34d399"/>
+  <polygon points="112,200 116,200 116,204 112,204" fill="#0f172a" opacity="0.3"/>
+  <rect x="128" y="202" width="96" height="12" rx="3" fill="#34d399" opacity="0.9"/>
+  
+  <!-- File icon + name (white/gray - regular file) -->
+  <rect x="104" y="232" width="12" height="14" rx="2" fill="#e2e8f0"/>
+  <polygon points="112,232 116,232 116,236 112,236" fill="#0f172a" opacity="0.3"/>
+  <rect x="128" y="234" width="60" height="12" rx="3" fill="#e2e8f0" opacity="0.7"/>
+  
+  <!-- File icon + name (cyan - symlink) -->
+  <rect x="104" y="264" width="12" height="14" rx="2" fill="#22d3ee"/>
+  <rect x="128" y="266" width="84" height="12" rx="3" fill="#22d3ee" opacity="0.9"/>
+  
+  <!-- Arrow/chevron prompt symbol on right side -->
+  <text x="340" y="196" font-family="monospace" font-size="48" font-weight="bold" fill="#f59e0b" opacity="0.9">$</text>
+  
+  <!-- Tree branch lines -->
+  <line x1="260" y1="228" x2="260" y2="280" stroke="#64748b" stroke-width="2" stroke-opacity="0.6"/>
+  <line x1="260" y1="248" x2="280" y2="248" stroke="#64748b" stroke-width="2" stroke-opacity="0.6"/>
+  <line x1="260" y1="272" x2="280" y2="272" stroke="#64748b" stroke-width="2" stroke-opacity="0.6"/>
+  
+  <!-- Small tree items -->
+  <rect x="284" y="244" width="8" height="8" rx="1" fill="#60a5fa" opacity="0.7"/>
+  <rect x="296" y="244" width="40" height="8" rx="2" fill="#60a5fa" opacity="0.5"/>
+  <rect x="284" y="268" width="8" height="8" rx="1" fill="#e2e8f0" opacity="0.7"/>
+  <rect x="296" y="268" width="32" height="8" rx="2" fill="#e2e8f0" opacity="0.5"/>
+  
+  <!-- Git status indicator dots -->
+  <circle cx="232" cy="208" r="4" fill="#34d399"/>
+  <circle cx="232" cy="240" r="4" fill="#f59e0b"/>
+  <circle cx="232" cy="272" r="4" fill="#ef4444"/>
+  
+  <!-- "ls-f" text at bottom -->
+  <text x="256" y="384" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="52" font-weight="900" fill="white" text-anchor="middle" letter-spacing="-2">ls-f</text>
+</svg>

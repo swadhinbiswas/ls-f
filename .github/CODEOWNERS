@@ -1,0 +1,12 @@
+# Default owner for everything
+* @swadhinbiswas
+
+# Rust source code
+/src/ @swadhinbiswas
+
+# CI/CD workflows
+/.github/workflows/ @swadhinbiswas
+
+# Cargo configuration
+/Cargo.toml @swadhinbiswas
+/Cargo.lock @swadhinbiswas

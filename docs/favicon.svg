@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- Terminal prompt -->
+  <text x="5" y="14" font-family="monospace" font-size="10" font-weight="bold" fill="#f59e0b" opacity="0.9">&gt;</text>
+  <!-- Stylized "ls" -->
+  <text x="6" y="26" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="white" letter-spacing="-1">ls-f</text>
+</svg>

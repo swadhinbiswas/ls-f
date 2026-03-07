@@ -9,6 +9,7 @@
     <meta name="description" content="ls-f: A modern, blazing-fast ls replacement with icons and colors, written in Rust. Transform your terminal with file-type-specific icons.">
     <meta name="keywords" content="ls, terminal, shell, rust, command-line, icons, nerd-fonts, lsf, rust-cli">
     <meta name="author" content="Swadhin Biswas">
+    <meta name="theme-color" content="#6366f1">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -26,6 +27,14 @@
 
     <link rel="canonical" href="https://swadhinbiswas.github.io/ls-f/" />
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="docs/favicon.svg">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -42,14 +51,17 @@
             --success: #10b981;
             --danger: #ef4444;
             --dark: #0f172a;
+            --dark-2: #1e293b;
             --light: #f8fafc;
             --text: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
             --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-            --nav-height: 70px;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+            --nav-height: 64px;
+            --radius: 12px;
         }
 
         html {
@@ -65,16 +77,17 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1120px;
             margin: 0 auto;
             padding: 0 1.5rem;
         }
 
-        /* Navigation */
+        /* ===== Navigation ===== */
         nav {
             height: var(--nav-height);
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             position: fixed;
             top: 0;
             width: 100%;
@@ -93,23 +106,38 @@
 
         .logo {
             font-weight: 800;
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             color: var(--primary);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
         }
 
         .nav-links {
             display: flex;
             gap: 2rem;
+            align-items: center;
         }
 
         .nav-links a {
             text-decoration: none;
-            color: var(--text);
+            color: var(--text-light);
             font-weight: 500;
+            font-size: 0.925rem;
             transition: color 0.2s;
         }
 
@@ -117,43 +145,138 @@
             color: var(--primary);
         }
 
-        /* Hero Section */
-        header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, var(--secondary) 100%);
+        .nav-links .btn-nav {
+            background: var(--primary);
             color: white;
-            padding: calc(var(--nav-height) + 100px) 0 100px;
+            padding: 0.45rem 1.1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .nav-links .btn-nav:hover {
+            background: var(--primary-dark);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Hamburger menu button */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* ===== Hero Section ===== */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 40%, #7c3aed 70%, var(--secondary) 100%);
+            color: white;
+            padding: calc(var(--nav-height) + 80px) 0 100px;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
 
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, rgba(236,72,153,0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
         header::after {
             content: '';
             position: absolute;
-            bottom: -50px;
+            bottom: -2px;
             left: 0;
             right: 0;
-            height: 100px;
+            height: 80px;
             background: var(--light);
-            transform: skewY(-2deg);
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 100px;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(8px);
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .hero-badge .version {
+            background: rgba(255,255,255,0.2);
+            border-radius: 100px;
+            padding: 0.1rem 0.6rem;
+            font-size: 0.78rem;
+            font-weight: 600;
         }
 
         header h1 {
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-size: clamp(2.8rem, 8vw, 4.5rem);
             margin-bottom: 1rem;
             font-weight: 900;
             letter-spacing: -2px;
-            animation: fadeInDown 0.8s ease-out;
+            line-height: 1.1;
+            animation: fadeInDown 0.7s ease-out 0.1s both;
         }
 
         header .tagline {
-            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            font-size: clamp(1.05rem, 2.5vw, 1.3rem);
             opacity: 0.9;
             margin-bottom: 2.5rem;
-            max-width: 700px;
+            max-width: 620px;
             margin-left: auto;
             margin-right: auto;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
+            line-height: 1.7;
+            animation: fadeInUp 0.7s ease-out 0.2s both;
+        }
+
+        header .tagline code {
+            background: rgba(255,255,255,0.15);
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95em;
         }
 
         .hero-buttons {
@@ -161,20 +284,22 @@
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
-            animation: fadeInUp 0.8s ease-out 0.4s both;
+            animation: fadeInUp 0.7s ease-out 0.35s both;
         }
 
-        /* Buttons */
+        /* ===== Buttons ===== */
         .btn {
-            padding: 0.8rem 2rem;
+            padding: 0.75rem 1.75rem;
             border-radius: 10px;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
         }
 
         .btn-white {
@@ -184,89 +309,155 @@
         }
 
         .btn-white:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
-            background: #fdfdfd;
         }
 
         .btn-outline {
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.35);
             color: white;
+            background: transparent;
         }
 
         .btn-outline:hover {
             background: rgba(255, 255, 255, 0.1);
-            border-color: white;
+            border-color: rgba(255, 255, 255, 0.6);
         }
 
-        /* Sections */
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ===== Sections ===== */
         section {
-            padding: 100px 0;
+            padding: 80px 0;
         }
 
         .section-title {
             text-align: center;
-            margin-bottom: 4rem;
+            margin-bottom: 3.5rem;
         }
 
         .section-title h2 {
-            font-size: 2.5rem;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
             font-weight: 800;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            color: transparent;
         }
 
-        /* Features */
+        .section-title p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        /* ===== Features ===== */
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
         }
 
         .feature-card {
             background: white;
-            padding: 3rem 2rem;
-            border-radius: 20px;
+            padding: 2.25rem 1.75rem;
+            border-radius: 16px;
             border: 1px solid var(--border);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .feature-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-6px);
             box-shadow: var(--shadow-lg);
             border-color: var(--primary-light);
         }
 
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            display: block;
+        .feature-card:hover::before {
+            opacity: 1;
         }
 
-        .feature-card h3 {
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
             font-size: 1.5rem;
-            margin-bottom: 1rem;
+        }
+
+        .feature-icon.speed { background: #ede9fe; }
+        .feature-icon.icons { background: #fce7f3; }
+        .feature-icon.tree { background: #d1fae5; }
+        .feature-icon.git { background: #dbeafe; }
+        .feature-icon.compat { background: #fef3c7; }
+        .feature-icon.zero { background: #e0e7ff; }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.6rem;
             color: var(--dark);
+            font-weight: 700;
         }
 
         .feature-card p {
             color: var(--text-light);
+            font-size: 0.925rem;
+            line-height: 1.6;
         }
 
-        /* Demo Section */
+        .feature-card code {
+            background: #f1f5f9;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--primary);
+        }
+
+        /* ===== Demo Section ===== */
+        #demo {
+            background: white;
+        }
+
         .demo-box {
-            background: #0f172a;
-            border-radius: 12px;
+            background: var(--dark);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: var(--shadow-lg);
-            border: 1px solid #1e293b;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid #334155;
+            max-width: 720px;
+            margin: 0 auto;
         }
 
         .demo-header {
-            background: #1e293b;
-            padding: 12px 20px;
+            background: var(--dark-2);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .demo-dots {
             display: flex;
             gap: 8px;
         }
@@ -276,83 +467,192 @@
         .dot.yellow { background: #ffbd2e; }
         .dot.green { background: #27c93f; }
 
+        .demo-title {
+            flex: 1;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.8rem;
+            font-family: 'Fira Code', monospace;
+        }
+
         .demo-content {
-            padding: 2rem;
-            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            padding: 1.5rem 2rem 2rem;
+            font-family: 'Fira Code', monospace;
             color: #e2e8f0;
+            font-size: 0.875rem;
+            line-height: 1.8;
             overflow-x: auto;
         }
 
-        .cmd { color: #10b981; margin-right: 0.5rem; }
+        .demo-content .prompt { color: var(--success); font-weight: 600; }
+        .demo-content .cmd { color: #e2e8f0; }
+        .demo-content .flag { color: var(--accent); }
+        .demo-content .dir { color: #60a5fa; font-weight: 600; }
+        .demo-content .file { color: #94a3b8; }
+        .demo-content .exec { color: #34d399; }
+        .demo-content .tree-line { color: #475569; }
+        .demo-content .git-m { color: #fbbf24; }
+        .demo-content .git-s { color: #34d399; }
+        .demo-content .git-u { color: #f87171; }
 
-        /* Installation */
-        .install-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
+        .demo-line {
+            white-space: nowrap;
         }
 
-        @media (max-width: 500px) {
-            .install-grid { grid-template-columns: 1fr; }
+        .demo-output {
+            margin-top: 4px;
+            margin-bottom: 16px;
+        }
+
+        .demo-screenshot {
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .demo-screenshot img {
+            max-width: 100%;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ===== Installation ===== */
+        .install-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .install-card {
             background: white;
-            padding: 2.5rem;
-            border-radius: 15px;
+            padding: 2rem;
+            border-radius: 16px;
             border: 1px solid var(--border);
+            transition: box-shadow 0.3s;
+        }
+
+        .install-card:hover {
+            box-shadow: var(--shadow-md);
         }
 
         .install-card h3 {
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .install-card > p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
         }
 
         .code-block {
-            background: #1e293b;
+            background: var(--dark);
             color: #e2e8f0;
-            padding: 1.5rem;
+            padding: 1rem 1.25rem;
             border-radius: 10px;
-            margin: 1.5rem 0;
             position: relative;
-            font-family: monospace;
-            font-size: 0.9rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            overflow-x: auto;
         }
 
-        /* Footer */
+        .code-block .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-family: 'Inter', system-ui, sans-serif;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .code-block .copy-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .code-block .copy-btn.copied {
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .copy-icon { width: 14px; height: 14px; }
+
+        .install-help {
+            margin-top: 2.5rem;
+            text-align: center;
+        }
+
+        .install-help a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .install-help a:hover {
+            border-bottom-color: var(--primary);
+        }
+
+        /* ===== Footer ===== */
         footer {
             background: var(--dark);
             color: white;
-            padding: 80px 0 40px;
+            padding: 60px 0 32px;
         }
 
         .footer-grid {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr;
-            gap: 4rem;
-            margin-bottom: 4rem;
+            gap: 3rem;
+            margin-bottom: 3rem;
         }
 
-        @media (max-width: 768px) {
-            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
-            .nav-links { display: none; }
-        }
-
-        .footer-logo {
-            font-size: 1.8rem;
+        .footer-brand .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
             font-weight: 800;
-            margin-bottom: 1.5rem;
-            display: block;
+            margin-bottom: 1rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .footer-brand .footer-logo svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .footer-brand p {
+            color: #94a3b8;
+            font-size: 0.925rem;
+            line-height: 1.7;
         }
 
         .footer-links h4 {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             text-transform: uppercase;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            color: var(--text-light);
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            font-weight: 600;
         }
 
         .footer-links ul {
@@ -360,12 +660,13 @@
         }
 
         .footer-links li {
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.6rem;
         }
 
         .footer-links a {
             color: #94a3b8;
             text-decoration: none;
+            font-size: 0.9rem;
             transition: color 0.2s;
         }
 
@@ -374,22 +675,91 @@
         }
 
         .copyright {
-            padding-top: 2rem;
+            padding-top: 1.5rem;
             border-top: 1px solid #1e293b;
             text-align: center;
-            color: var(--text-light);
-            font-size: 0.9rem;
+            color: #64748b;
+            font-size: 0.85rem;
         }
 
-        /* Animations */
+        /* ===== Animations ===== */
         @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
+            from { opacity: 0; transform: translateY(-16px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(16px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 900px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: var(--nav-height);
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 1rem 1.5rem 1.5rem;
+                gap: 0.75rem;
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow-md);
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .nav-links a {
+                padding: 0.5rem 0;
+                font-size: 1rem;
+            }
+
+            .nav-links .btn-nav {
+                text-align: center;
+                padding: 0.6rem;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .install-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: calc(var(--nav-height) + 48px) 0 80px;
+            }
+
+            section {
+                padding: 60px 0;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-content {
+                font-size: 0.78rem;
+                padding: 1.25rem;
+            }
         }
     </style>
 </head>
@@ -397,23 +767,48 @@
 
     <nav>
         <div class="container">
-            <a href="#" class="logo">✨ ls-f</a>
-            <div class="nav-links">
+            <a href="#" class="logo">
+                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs><linearGradient id="nav-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>
+                    <rect width="32" height="32" rx="7" fill="url(#nav-grad)"/>
+                    <text x="5" y="14" font-family="monospace" font-size="10" font-weight="bold" fill="#f59e0b" opacity="0.9">&gt;</text>
+                    <text x="4" y="26" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="white" letter-spacing="-0.5">ls-f</text>
+                </svg>
+                <span>ls-f</span>
+            </a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
                 <a href="#demo">Demo</a>
                 <a href="#installation">Install</a>
-                <a href="https://github.com/swadhinbiswas/ls-f">GitHub</a>
+                <a href="https://github.com/swadhinbiswas/ls-f" class="btn-nav">
+                    <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    GitHub
+                </a>
             </div>
         </div>
     </nav>
 
     <header>
-        <div class="container">
+        <div class="container hero-content">
+            <div class="hero-badge">
+                Written in Rust <span class="version">v5.0.1</span>
+            </div>
             <h1>ls-f</h1>
-            <p class="tagline">A modern, blazing-fast <code>ls</code> replacement with beautiful icons and colors, rewritten in Rust for maximum performance.</p>
+            <p class="tagline">A modern, blazing-fast <code>ls</code> replacement with beautiful file icons, git integration, and tree view.</p>
             <div class="hero-buttons">
-                <a href="#installation" class="btn btn-white">Get Started</a>
-                <a href="https://github.com/swadhinbiswas/ls-f" class="btn btn-outline">View on GitHub</a>
+                <a href="#installation" class="btn btn-white">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    Get Started
+                </a>
+                <a href="https://github.com/swadhinbiswas/ls-f" class="btn btn-outline">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    View on GitHub
+                </a>
             </div>
         </div>
     </header>
@@ -429,77 +824,103 @@
                 
                 <div class="features-grid">
                     <article class="feature-card">
-                        <span class="feature-icon">🚀</span>
+                        <div class="feature-icon speed">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </div>
                         <h3>Native Speed</h3>
-                        <p>Written in Rust (v5.0.0), matching GNU ls speed even with complex icon rendering and colorization.</p>
+                        <p>Written in Rust, matching GNU ls speed even with complex icon rendering and colorization.</p>
                     </article>
                     
                     <article class="feature-card">
-                        <span class="feature-icon">🎨</span>
+                        <div class="feature-icon icons">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17 2H7a5 5 0 00-5 5v10a5 5 0 005 5h10a5 5 0 005-5V7a5 5 0 00-5-5z"/><path d="M2 17l5-5c.928-.893 2.072-.893 3 0l5 5"/><path d="M14 14l2-2c.928-.893 2.072-.893 3 0l3 3"/></svg>
+                        </div>
                         <h3>Nerd Font Icons</h3>
-                        <p>Rich support for hundreds of file types and extensions using Nerd Fonts for instant visual recognition.</p>
+                        <p>500+ file-type icons using Nerd Fonts for instant visual recognition of any file.</p>
                     </article>
                     
                     <article class="feature-card">
-                        <span class="feature-icon">🌳</span>
+                        <div class="feature-icon tree">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        </div>
                         <h3>Built-in Tree View</h3>
-                        <p>Visualize your directory structure recursively with the <code>--tree</code> flag, no extra tools required.</p>
+                        <p>Visualize directory structure with <code>--tree</code>, no extra tools required.</p>
                     </article>
                     
                     <article class="feature-card">
-                        <span class="feature-icon">🌿</span>
+                        <div class="feature-icon git">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 012 2v7"/><path d="M6 9v12"/></svg>
+                        </div>
                         <h3>Git Integration</h3>
-                        <p>See the status of your files (staged, modified, new) directly in your file listings with <code>--git</code>.</p>
+                        <p>See file status (staged, modified, untracked) inline with <code>--git</code> in any view mode.</p>
                     </article>
                     
                     <article class="feature-card">
-                        <span class="feature-icon">⚙️</span>
+                        <div class="feature-icon compat">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        </div>
                         <h3>GNU Compatible</h3>
-                        <p>Supports all standard flags like <code>-l</code>, <code>-a</code>, <code>-R</code>, <code>-h</code>, <code>-t</code>, <code>-S</code>, and more.</p>
+                        <p>Supports all standard flags: <code>-l</code>, <code>-a</code>, <code>-R</code>, <code>-h</code>, <code>-t</code>, <code>-S</code>, and 30+ more.</p>
                     </article>
                     
                     <article class="feature-card">
-                        <span class="feature-icon">📦</span>
+                        <div class="feature-icon zero">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z"/></svg>
+                        </div>
                         <h3>Zero Dependencies</h3>
-                        <p>Distributed as a single static binary. No runtime dependencies, no Python or Bash required.</p>
+                        <p>Single static binary (~935 KB). No runtime dependencies, no Python or Bash required.</p>
                     </article>
                 </div>
             </div>
         </section>
 
         <!-- Demo Section -->
-        <section id="demo" style="background: white;">
+        <section id="demo">
             <div class="container">
                 <div class="section-title">
                     <h2>See it in Action</h2>
+                    <p>A modern terminal experience out of the box.</p>
                 </div>
                 
                 <div class="demo-box">
                     <div class="demo-header">
-                        <div class="dot red"></div>
-                        <div class="dot yellow"></div>
-                        <div class="dot green"></div>
+                        <div class="demo-dots">
+                            <div class="dot red"></div>
+                            <div class="dot yellow"></div>
+                            <div class="dot green"></div>
+                        </div>
+                        <div class="demo-title">~/my-project</div>
+                        <div style="width: 36px;"></div>
                     </div>
                     <div class="demo-content">
-                        <div><span class="cmd">$</span> lsf</div>
-                        <div style="margin-top: 10px; color: #94a3b8;">
-                            📄 Cargo.toml &nbsp;&nbsp; 📄 README.md &nbsp;&nbsp; 📁 src/ &nbsp;&nbsp; 📁 target/
+                        <div class="demo-line"><span class="prompt">$</span> <span class="cmd">lsf</span></div>
+                        <div class="demo-output">
+                            <span class="dir"> src/</span> &nbsp; <span class="dir"> docs/</span> &nbsp; <span class="file"> Cargo.toml</span> &nbsp; <span class="file"> README.md</span> &nbsp; <span class="exec"> build.sh</span>
                         </div>
-                        <div style="margin-top: 20px;"><span class="cmd">$</span> lsf --tree --depth 2</div>
-                        <div style="margin-top: 10px; color: #94a3b8;">
-                            . <br>
-                            ├── 📄 Cargo.toml <br>
-                            ├── 📄 README.md <br>
-                            ├── 📁 src/ <br>
-                            │&nbsp;&nbsp; ├── 📄 main.rs <br>
-                            │&nbsp;&nbsp; └── 📄 cli.rs <br>
-                            └── 📁 target/
+
+                        <div class="demo-line"><span class="prompt">$</span> <span class="cmd">lsf</span> <span class="flag">--tree --git --depth 2</span></div>
+                        <div class="demo-output">
+                            <span class="dir"> .</span> <span class="git-m">[M]</span><br>
+                            <span class="tree-line">├──</span> <span class="file"> Cargo.toml</span> <span class="git-s">[S]</span><br>
+                            <span class="tree-line">├──</span> <span class="file"> README.md</span><br>
+                            <span class="tree-line">├──</span> <span class="dir"> src/</span> <span class="git-m">[M]</span><br>
+                            <span class="tree-line">│  ├──</span> <span class="file"> main.rs</span> <span class="git-m">[M]</span><br>
+                            <span class="tree-line">│  └──</span> <span class="file"> cli.rs</span><br>
+                            <span class="tree-line">└──</span> <span class="dir"> docs/</span><br>
+                            <span class="tree-line">   └──</span> <span class="file"> INSTALL.md</span> <span class="git-u">[?]</span>
+                        </div>
+
+                        <div class="demo-line"><span class="prompt">$</span> <span class="cmd">lsf</span> <span class="flag">-l --git</span></div>
+                        <div class="demo-output" style="margin-bottom:0">
+                            <span class="file">drwxr-xr-x  5 user  staff  160 Mar  8 10:30</span> <span class="dir"> src</span> <span class="git-m">[M]</span><br>
+                            <span class="file">-rw-r--r--  1 user  staff  842 Mar  8 09:15</span> <span class="file"> Cargo.toml</span> <span class="git-s">[S]</span><br>
+                            <span class="file">-rwxr-xr-x  1 user  staff  256 Mar  7 14:22</span> <span class="exec"> build.sh</span>
                         </div>
                     </div>
                 </div>
                 
-                <div style="margin-top: 4rem; text-align: center;">
-                    <img src="docs/example.png" alt="ls-f screenshot" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+                <div class="demo-screenshot">
+                    <img src="docs/example.png" alt="ls-f terminal screenshot showing colorized file listing with icons" width="811" height="256" loading="lazy">
                 </div>
             </div>
         </section>
@@ -514,27 +935,40 @@
 
                 <div class="install-grid">
                     <div class="install-card">
-                        <h3>📦 Via Cargo (Recommended)</h3>
-                        <p>The easiest way to install and stay updated.</p>
-                        <div class="code-block">
-                            cargo install --path .
+                        <h3>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z"/></svg>
+                            Via Cargo
+                        </h3>
+                        <p>Recommended &mdash; the easiest way to install.</p>
+                        <div class="code-block" id="code-cargo">
+                            <button class="copy-btn" onclick="copyCode('code-cargo')" aria-label="Copy to clipboard">
+                                <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                Copy
+                            </button>
+                            <code>cargo install --path .</code>
                         </div>
-                        <p style="font-size: 0.9rem; color: var(--text-light);">*Run this command inside the cloned repository.</p>
                     </div>
 
                     <div class="install-card">
-                        <h3>🔨 From Source</h3>
+                        <h3>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                            From Source
+                        </h3>
                         <p>Build and install to your system bin directory.</p>
-                        <div class="code-block">
-                            git clone https://github.com/swadhinbiswas/ls-f.git<br>
-                            cd ls-f<br>
-                            make install
+                        <div class="code-block" id="code-source">
+                            <button class="copy-btn" onclick="copyCode('code-source')" aria-label="Copy to clipboard">
+                                <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                Copy
+                            </button>
+                            <code>git clone https://github.com/swadhinbiswas/ls-f.git
+cd ls-f
+make install</code>
                         </div>
                     </div>
                 </div>
 
-                <div style="margin-top: 3rem; text-align: center;">
-                    <p>Need more help? Check the <a href="docs/INSTALLATION.md" style="color: var(--primary); font-weight: 600;">Full Installation Guide</a>.</p>
+                <div class="install-help">
+                    <p>Need more help? Check the <a href="https://github.com/swadhinbiswas/ls-f/blob/main/docs/INSTALLATION.md">Full Installation Guide</a>.</p>
                 </div>
             </div>
         </section>
@@ -543,16 +977,25 @@
     <footer>
         <div class="container">
             <div class="footer-grid">
-                <div>
-                    <span class="footer-logo">ls-f</span>
-                    <p style="color: #94a3b8; margin-bottom: 2rem;">A beautiful, modern replacement for ls, written with ❤️ in Rust.</p>
+                <div class="footer-brand">
+                    <a href="#" class="footer-logo">
+                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs><linearGradient id="ft-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>
+                            <rect width="32" height="32" rx="7" fill="url(#ft-grad)"/>
+                            <text x="5" y="14" font-family="monospace" font-size="10" font-weight="bold" fill="#f59e0b" opacity="0.9">&gt;</text>
+                            <text x="4" y="26" font-family="system-ui, sans-serif" font-size="13" font-weight="900" fill="white" letter-spacing="-0.5">ls-f</text>
+                        </svg>
+                        ls-f
+                    </a>
+                    <p>A beautiful, modern replacement for <code style="background:rgba(255,255,255,0.08);padding:0.1rem 0.3rem;border-radius:4px;font-family:'Fira Code',monospace;font-size:0.85em;">ls</code>, written in Rust. Fast, colorful, and feature-rich.</p>
                 </div>
                 <div class="footer-links">
                     <h4>Documentation</h4>
                     <ul>
-                        <li><a href="docs/INSTALLATION.md">Installation</a></li>
-                        <li><a href="docs/CONFIGURATION.md">Configuration</a></li>
-                        <li><a href="docs/TROUBLESHOOTING.md">Troubleshooting</a></li>
+                        <li><a href="https://github.com/swadhinbiswas/ls-f/blob/main/docs/INSTALLATION.md">Installation</a></li>
+                        <li><a href="https://github.com/swadhinbiswas/ls-f/blob/main/docs/CONFIGURATION.md">Configuration</a></li>
+                        <li><a href="https://github.com/swadhinbiswas/ls-f/blob/main/docs/TROUBLESHOOTING.md">Troubleshooting</a></li>
+                        <li><a href="https://github.com/swadhinbiswas/ls-f/blob/main/QUICK_REFERENCE.md">Quick Reference</a></li>
                     </ul>
                 </div>
                 <div class="footer-links">
@@ -561,15 +1004,64 @@
                         <li><a href="https://github.com/swadhinbiswas/ls-f">GitHub</a></li>
                         <li><a href="https://github.com/swadhinbiswas/ls-f/issues">Issues</a></li>
                         <li><a href="https://github.com/swadhinbiswas/ls-f/pulls">Pull Requests</a></li>
+                        <li><a href="https://github.com/swadhinbiswas/ls-f/blob/main/CONTRIBUTING.md">Contributing</a></li>
                     </ul>
                 </div>
             </div>
             
             <div class="copyright">
-                <p>&copy; 2026 Swadhin Biswas. Released under the MIT License.</p>
+                <p>&copy; <script>document.write(new Date().getFullYear())</script> Swadhin Biswas. Released under the MIT License.</p>
             </div>
         </div>
     </footer>
+
+    <script>
+        // Mobile hamburger menu toggle
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('nav-links');
+        
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navLinks.classList.toggle('open');
+        });
+
+        // Close menu when a link is clicked
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navLinks.classList.remove('open');
+            });
+        });
+
+        // Copy to clipboard
+        function copyCode(blockId) {
+            const block = document.getElementById(blockId);
+            const code = block.querySelector('code').textContent;
+            const btn = block.querySelector('.copy-btn');
+            
+            navigator.clipboard.writeText(code.trim()).then(() => {
+                btn.classList.add('copied');
+                btn.innerHTML = '<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
+                }, 2000);
+            });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    const offset = 80; // nav height + padding
+                    const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                    window.scrollTo({ top, behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
