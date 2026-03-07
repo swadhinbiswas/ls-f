@@ -9,9 +9,45 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Run all checks before building/publishing
+  checks:
+    name: Pre-release Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify version matches tag
+        run: |
+          tag="${GITHUB_REF##*/}"
+          version="v$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')"
+          if [[ "$tag" != "$version" ]]; then
+            echo "::error::Tag $tag does not match Cargo.toml version $version"
+            exit 1
+          fi
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --verbose
+      - run: cargo publish --dry-run
+
+  # Publish to crates.io
+  publish:
+    name: Publish to crates.io
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Publish
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
   # Build Rust binaries for multiple platforms
   build:
     name: Build (${{ matrix.target }})
+    needs: checks
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -65,10 +101,10 @@ jobs:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}.tar.gz*
 
-  # Create GitHub release with all artifacts
+  # Create GitHub release with all binary artifacts
   release:
-    name: Create Release
-    needs: build
+    name: Create GitHub Release
+    needs: [build, publish]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -105,7 +141,7 @@ jobs:
             cat > /tmp/notes.md << 'NOTES'
           ## Install
 
-          ### From crates.io
+          ### From crates.io (recommended)
           ```sh
           cargo install lsf
           ```
