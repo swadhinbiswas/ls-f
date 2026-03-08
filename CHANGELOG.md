@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.2.0] - 2026-03-08
+### Added
+- **Cargo Installation**: `lsf` is now available via `cargo install lsf` for easy installation
+
+### Fixed
+- **Git Detection Performance**: Optimized `--git` flag to check for `.git` folder existence before running git commands
+- Faster startup time when `--git` is used outside git repositories
+- Parent directory walking to find git repository root
+
+### Changed
+- **Documentation**: Updated README to prioritize `cargo install` as the recommended installation method
+
 ## [5.0.1] - 2026-02-15
 ### Fixed
 - **Security Vulnerabilities**:
@@ -68,6 +80,7 @@ All notable changes to this project will be documented in this file.
 ### Removed
 - Deprecated ls-material.sh script
 
+[5.2.0]: https://github.com/swadhinbiswas/ls-f/compare/v5.0.1...v5.2.0
 [5.0.1]: https://github.com/swadhinbiswas/ls-f/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/swadhinbiswas/ls-f/compare/v4.5.1...v5.0.0
 [4.5.1]: https://github.com/swadhinbiswas/ls-f/compare/v4.5.0...v4.5.1

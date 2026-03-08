@@ -182,6 +182,21 @@ impl GitRepo {
 
 /// Discover the git repository root for a given directory.
 fn find_repo_root(dir: &Path) -> Option<PathBuf> {
+    // Fast path: check if .git exists in this directory or any parent
+    let mut current = dir;
+    loop {
+        let git_dir = current.join(".git");
+        if git_dir.exists() {
+            break;
+        }
+        if let Some(parent) = current.parent() {
+            current = parent;
+        } else {
+            // No .git folder found in any parent directory
+            return None;
+        }
+    }
+
     let output = Command::new("git")
         .args(["rev-parse", "--show-toplevel"])
         .current_dir(dir)
