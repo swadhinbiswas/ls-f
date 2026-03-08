@@ -42,8 +42,14 @@
 ### Prerequisites
 - A **[Nerd Font](https://www.nerdfonts.com/)** must be set in your terminal for icons to render.
 
-### 1. Build from Source (Rust - Recommended)
-The Rust version (v5.0.0) provides the best performance and features.
+### 1. Install via Cargo (Recommended)
+The easiest way to install `lsf`:
+```bash
+cargo install lsf
+```
+
+### 2. Build from Source
+Alternatively, you can build from source:
 ```bash
 git clone https://github.com/swadhinbiswas/ls-f.git
 cd ls-f
